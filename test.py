@@ -5,11 +5,11 @@ from rag.vector_store import create_vectorestore
 from data.job_roles import docs
 from rag.retriever import retrieve_role_info
 from utils.skill_extractor import extract_skill
-from data.all_skills import ALL_SKILLS
+from data.all_skills import all_skills
 
 resume_text=extract_text_from_pdf("sample_resume.pdf")
 cleand=clean_text(resume_text)
-resume_skills=set(extract_skill(cleand,ALL_SKILLS))
+resume_skills=set(extract_skill(cleand,all_skills))
 
 
 embeddings=load_embeddings() 
@@ -22,7 +22,7 @@ retrieved_docs=retrieve_role_info(target_role,vectorstore)
 role_text=retrieved_docs[0].page_content
 
 
-role_skills=set(extract_skill(role_text,ALL_SKILLS))
+role_skills=set(extract_skill(role_text,all_skills))
 
 matched_skills=role_skills.intersection(resume_skills)
 
