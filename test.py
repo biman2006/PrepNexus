@@ -15,14 +15,43 @@ resume_skills=set(extract_skill(cleand,ALL_SKILLS))
 embeddings=load_embeddings() 
 vectorstore=create_vectorestore(docs,embeddings)
 
-role="Machine Learning Engineer"
+target_role=input("Enter your target job role:")
 
-results=retrieve_role_info(role,vectorstore)
+retrieved_docs=retrieve_role_info(target_role,vectorstore)
 
-print("Retrieved Role Requirements:\n")
+role_text=retrieved_docs[0].page_content
 
-for result in results:
-    print(result.page_content)
 
+role_skills=set(extract_skill(role_text,ALL_SKILLS))
+
+matched_skills=role_skills.intersection(resume_skills)
+
+missing_skills=role_skills-resume_skills
+
+if len(role_skills)>0:
+    match_score=(len(matched_skills)/len(role_skills))*100
+
+else:
+    match_score=0
+
+
+print("\n"+ "="*100)
+
+print("Target Role:")
+print(target_role)
+
+print("\nRole Required Skills:")
+print(role_skills)
+
+print("\nYour Resume Skills:")
+print(resume_skills)
+
+print("\nMatched Skills:")
+print(matched_skills)
+
+print("\nMissing Skills:")
+print(missing_skills)
+
+print(f"\nMatch Score: {match_score:.2f}%")
 
 
