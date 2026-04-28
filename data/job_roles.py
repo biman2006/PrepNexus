@@ -20,7 +20,7 @@ docs=[
 
     Document(page_content="Business Intelligence Analyst requires SQL, Power BI, Tableau, Excel, ETL, Dashboard Development"),
 
-    Document(page_content="Data Scientist requires Python, Machine Learning, Deep Learning, Statistics, Pandas, NumPy, Scikit-learn, Data Visualization"),
+    Document(page_content="Data Scientist requires Python, Machine Learning, Tensorflow , Statistics, Pandas, NumPy, Scikit-learn, Data Visualization"),
 
     Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, Scikit-learn, MLOps, Docker, Kubernetes"),
 
