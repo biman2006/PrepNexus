@@ -1,12 +1,20 @@
 
 
+"""
+Production-Grade Job Roles Knowledge Base
+Designed for:
+- Resume matching
+- ATS systems
+- RAG retrieval
+- FAISS semantic role search
+- Startup hiring
+- Skill gap analysis
+"""
+
 from langchain_core.documents import Document
 
-# =====================================================
-# JOB ROLE DOCUMENTS
-# =====================================================
-
 docs = [
+
     # =================================================
     # SOFTWARE DEVELOPMENT
     # =================================================
@@ -19,6 +27,8 @@ docs = [
     Document(page_content="Software Engineer requires Python, Java, C++, Data Structures, Algorithms, OOP, DBMS, System Design, Git, Software Engineering, Testing, Debugging, CI/CD"),
 
     Document(page_content="Founding Engineer requires Full Stack Development, Product Thinking, React, Node.js, Python, Cloud Deployment, Startup Agility, System Design, DevOps, APIs, Leadership, Rapid Prototyping"),
+
+    Document(page_content="Growth Engineer requires Python, SQL, Analytics, A/B Testing, Automation, APIs, Marketing Automation, Product Growth, Dashboarding"),
 
     # =================================================
     # MOBILE DEVELOPMENT
@@ -49,13 +59,15 @@ docs = [
     # =================================================
     Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, Scikit-learn, TensorFlow, PyTorch, Feature Engineering, MLOps, Docker, Kubernetes, Model Deployment, AWS"),
 
-    Document(page_content="AI Engineer requires Python, NLP, Computer Vision, Transformers, LLMs, LangChain, RAG, Fine-Tuning, Prompt Engineering, Hugging Face, OpenAI API, Vector Databases"),
+    Document(page_content="AI Engineer requires Python, Natural Language Processing, Computer Vision, Transformers, Large Language Models, LangChain, RAG, Fine-Tuning, Prompt Engineering, Hugging Face, OpenAI API, Vector Databases"),
 
     Document(page_content="LLM Engineer requires Python, Transformers, Hugging Face, LangChain, LangGraph, Vector Databases, FAISS, Pinecone, RAG, Prompt Engineering, Fine-Tuning, OpenAI API, vLLM, Deployment"),
 
     Document(page_content="Generative AI Engineer requires Python, Large Language Models, Prompt Engineering, LangChain, Retrieval-Augmented Generation, OpenAI API, Anthropic, Fine-Tuning, Semantic Search, Multi-Agent Systems"),
 
     Document(page_content="Prompt Engineer requires Prompt Engineering, LLM Optimization, OpenAI API, Claude, LangChain, Prompt Chaining, Guardrails, Testing"),
+
+    Document(page_content="RAG Engineer requires Python, LangChain, Retrieval-Augmented Generation, FAISS, Pinecone, ChromaDB, Vector Search, Embeddings, Prompt Engineering, Semantic Search"),
 
     Document(page_content="MLOps Engineer requires Python, Docker, Kubernetes, MLflow, CI/CD, AWS, Terraform, Monitoring, Model Deployment, Automation"),
 
@@ -74,6 +86,8 @@ docs = [
 
     Document(page_content="Platform Engineer requires Kubernetes, Terraform, Cloud Infrastructure, CI/CD, Automation, Scalability Engineering"),
 
+    Document(page_content="Cloud Architect requires AWS, Azure, Google Cloud Platform, Cloud Architecture, Security, Scalability, Terraform, Kubernetes"),
+
     # =================================================
     # CYBERSECURITY
     # =================================================
@@ -84,6 +98,8 @@ docs = [
     Document(page_content="SOC Analyst requires SIEM, Splunk, Log Analysis, Threat Intelligence, Monitoring, Security Operations"),
 
     Document(page_content="Cloud Security Engineer requires AWS Security, Azure Security, IAM, Compliance, Encryption, Cloud Security Architecture"),
+
+    Document(page_content="Security Engineer requires Network Security, Cloud Security, SIEM, Vulnerability Assessment, Firewalls, Compliance"),
 
     # =================================================
     # QA / TESTING
@@ -144,7 +160,7 @@ docs = [
     # =================================================
     Document(page_content="Bioinformatics Engineer requires Python, R, Genomics, Bioinformatics, Machine Learning, Data Analysis"),
 
-    Document(page_content="Quantum Computing Researcher requires Qiskit, Linear Algebra, Quantum Algorithms, Advanced Mathematics, Research"),
+    Document(page_content="Quantum Computing Researcher requires Qiskit, Linear Algebra, Quantum Algorithms, Advanced Mathematics, Research")
 ]
 
 # =====================================================
@@ -161,11 +177,14 @@ def get_all_job_roles():
 
 def get_role_skills(role_name: str):
     role_name = role_name.strip().lower()
+
     for doc in docs:
         content = doc.page_content.lower()
+
         if content.startswith(role_name):
-            return [skill.strip() for skill in doc.page_content.split(" requires ")[1].split(",")]
+            return [
+                skill.strip().lower()
+                for skill in doc.page_content.split(" requires ")[1].split(",")
+            ]
+
     return []
-
-
-   
