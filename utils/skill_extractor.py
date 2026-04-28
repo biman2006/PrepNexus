@@ -3,7 +3,7 @@ def extract_skill(text,skill_list):
 
     text=text.lower()
 
-    words=text.split()
+    words=set(text.split())
 
     sorted_skills=sorted(skill_list,key=len, reverse=True)
 
@@ -11,7 +11,7 @@ def extract_skill(text,skill_list):
         skill_lower=skill.lower()
 
         if " " in skill.lower():
-            if skill.lower in text:
+            if skill_lower in text:
                 found_skill.append(skill_lower)
 
         else:
