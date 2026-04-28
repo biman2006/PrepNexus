@@ -10,7 +10,7 @@ def extract_skill(text,skill_list):
     for skill in sorted_skills:
         skill_lower=skill.lower()
 
-        if " " in skill.lower:
+        if " " in skill.lower():
             if skill.lower in text:
                 found_skill.append(skill_lower)
 
