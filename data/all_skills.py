@@ -1,5 +1,8 @@
 
 
+
+
+
 """
 Enhanced Master Skills Database
 Production-grade for:
@@ -20,182 +23,82 @@ all_skills = [
     "python", "c", "c++", "java", "javascript", "typescript", "sql",
     "html", "css", "bash", "powershell", "go", "rust", "kotlin",
     "swift", "php", "ruby", "r", "matlab", "scala", "perl",
-    "haskell", "elixir", "clojure", "erlang", "fortran", "cobol",
-    "assembly", "cuda", "webassembly",
 
-    # CS Fundamentals
-    "data structures", "algorithms", "object-oriented programming",
-    "functional programming", "operating systems", "dbms",
-    "computer networks", "system design", "software engineering",
-    "design patterns", "distributed systems", "compiler design",
-    "parallel computing", "quantum computing", "formal verification",
+    # Core CS
+    "data structures", "algorithms", "oop", "object oriented programming",
+    "dbms", "operating systems", "computer networks", "system design",
 
-    # Frontend Development
-    "html5", "css3", "responsive design", "dom manipulation",
-    "accessibility", "seo", "react", "next.js",
-    "vue.js", "nuxt.js", "angular", "svelte", "redux",
-    "zustand", "tailwind css", "bootstrap", "webpack", "vite",
-    "web performance optimization", "ssr", "ssg",
-    "progressive web apps", "micro frontends",
+    # Frontend
+    "react", "next.js", "vue.js", "angular", "tailwind css",
+    "bootstrap", "redux", "html5", "css3", "responsive design",
 
-    # Backend Development
-    "node.js", "express.js", "django", "flask",
-    "fastapi", "spring boot", "asp.net", "laravel",
-    "graphql", "grpc", "websockets", "microservices",
-    "event-driven architecture", "cqrs", "domain driven design",
-    "rest api", "jwt", "oauth", "authentication",
+    # Backend
+    "node.js", "express.js", "django", "flask", "fastapi",
+    "spring boot", "rest api", "graphql", "jwt", "oauth",
 
     # Databases
     "mysql", "postgresql", "mongodb", "redis", "sqlite",
-    "mariadb", "oracle", "cassandra", "dynamodb",
-    "neo4j", "database normalization", "indexing",
-    "query optimization", "etl", "data warehousing",
-    "data lakes", "lakehouse", "snowflake", "bigquery",
+    "snowflake", "bigquery", "etl", "data warehousing",
 
-    # Mobile Development
-    "android development", "android studio", "jetpack compose",
-    "ios development", "swiftui", "xcode",
-    "core data", "flutter", "dart", "react native",
-    "xamarin", "ionic", "cross platform development",
+    # Mobile
+    "flutter", "dart", "react native", "android", "kotlin", "swift",
 
-    # Desktop Development
-    "electron.js", "pyqt", "tkinter", ".net", "wpf",
+    # Data Analysis
+    "excel", "power bi", "tableau", "pandas", "numpy",
+    "matplotlib", "seaborn", "statistics", "probability",
+    "data cleaning", "exploratory data analysis", "feature engineering",
+    "dashboard development", "data visualization",
 
-    # Data Analysis / BI
-    "excel", "microsoft excel", "power bi", "tableau",
-    "pandas", "numpy", "matplotlib", "seaborn",
-    "statistics", "probability", "data cleaning",
-    "exploratory data analysis", "feature engineering",
-    "a/b testing", "time series analysis",
-    "data visualization", "dashboard development",
-
-    # Big Data / Data Engineering
-    "apache spark", "hadoop", "big data analytics",
-    "kafka", "airflow", "etl pipelines",
+    # Big Data
+    "apache spark", "hadoop", "kafka", "airflow",
 
     # Machine Learning
-    "machine learning", "linear regression",
-    "logistic regression", "decision trees",
-    "random forest", "gradient descent",
-    "support vector machines", "svm",
-    "knn", "clustering",
-    "dimensionality reduction", "xgboost",
-    "lightgbm", "catboost",
-    "ensemble learning", "hyperparameter tuning",
-    "model deployment", "mlops", "scikit-learn",
+    "machine learning", "linear regression", "logistic regression",
+    "decision trees", "random forest", "gradient descent",
+    "xgboost", "lightgbm", "scikit-learn", "mlops",
 
     # Deep Learning
-    "tensorflow", "pytorch", "keras",
-    "neural networks", "cnn", "rnn",
-    "lstm", "transformers", "bert",
-    "gpt", "large language models",
-    "gans", "diffusion models",
-    "reinforcement learning", "transfer learning",
+    "tensorflow", "pytorch", "keras", "cnn", "rnn", "lstm",
+    "transformers", "bert", "gpt", "large language models",
     "fine-tuning", "lora", "qlora",
 
-    # AI Engineering / LLMOps
-    "natural language processing", "computer vision", "langchain",
-    "llamaindex", "retrieval-augmented generation",
-    "rag", "vector databases", "faiss",
-    "chromadb", "pinecone", "prompt engineering",
-    "agentic ai", "tool calling",
-    "model quantization", "rlhf",
-    "knowledge graphs", "ai safety",
-    "openai api", "anthropic", "claude",
-    "llama", "mistral", "hugging face",
-    "vllm", "langgraph", "crew ai",
-    "autogen", "streamlit", "gradio",
+    # AI / LLMOps
+    "natural language processing", "computer vision",
+    "langchain", "llamaindex", "retrieval-augmented generation",
+    "rag", "faiss", "chromadb", "pinecone",
+    "prompt engineering", "openai api", "hugging face",
+    "langgraph", "streamlit", "gradio",
     "semantic search", "multi-agent systems",
-    "guardrails", "prompt chaining",
 
-    # Cloud Computing
+    # Cloud / DevOps
     "aws", "azure", "google cloud platform",
-    "ec2", "s3", "lambda",
-    "rds", "iam", "serverless",
     "docker", "kubernetes", "terraform",
-    "infrastructure as code", "cloud security",
-    "cloud architecture", "multi-cloud",
-
-    # DevOps / SRE
-    "git", "github", "gitlab",
-    "ci/cd", "jenkins", "ansible",
-    "prometheus", "grafana",
-    "observability", "site reliability engineering",
-    "chaos engineering", "linux",
-    "automation", "monitoring",
-    "github actions",
+    "ci/cd", "jenkins", "github actions",
+    "linux", "prometheus", "grafana",
 
     # Cybersecurity
-    "network security", "encryption",
-    "owasp", "firewalls", "siem",
-    "ethical hacking", "penetration testing",
-    "reverse engineering", "malware analysis",
-    "zero trust security",
-    "threat detection", "incident response",
+    "network security", "siem", "penetration testing",
+    "ethical hacking", "incident response",
 
-    # Networking
-    "tcp/ip", "dns", "http", "https",
-    "routing", "switching", "bgp",
-    "sdn", "load balancing", "vpn",
-    "network automation", "cisco",
-
-    # Testing / QA
-    "manual testing", "regression testing",
-    "selenium", "cypress", "playwright",
-    "junit", "pytest",
-    "performance testing", "security testing",
-    "api testing", "test case design",
-    "bug tracking", "jmeter", "loadrunner",
+    # Testing
+    "selenium", "playwright", "pytest", "junit",
+    "manual testing", "api testing",
 
     # UI/UX
-    "figma", "adobe xd", "photoshop",
-    "illustrator", "wireframing",
-    "prototyping", "user research",
-    "interaction design", "design systems",
-    "usability testing", "journey mapping",
+    "figma", "adobe xd", "wireframing", "prototyping",
 
-    # Product / Business
-    "agile", "scrum", "roadmapping",
-    "stakeholder management", "product strategy",
-    "analytics", "business process management",
-    "jira", "confluence", "notion",
-    "slack", "trello", "asana",
+    # Product
+    "agile", "scrum", "jira", "product strategy",
 
     # Blockchain
-    "bitcoin", "ethereum", "solidity",
-    "smart contracts", "web3",
-    "nfts", "defi",
-    "consensus mechanisms", "cryptography",
+    "solidity", "ethereum", "web3", "smart contracts",
 
-    # Embedded / IoT / Robotics
-    "microcontrollers", "rtos",
-    "hardware programming", "arduino",
-    "raspberry pi", "mqtt",
-    "sensors", "cloud iot",
-    "robotics", "ros",
-    "control systems",
-
-    # AR/VR / Gaming
-    "unity", "unreal engine",
-    "3d modeling", "game physics",
-    "animation", "3d graphics",
-    "xr sdk", "ar/vr",
-
-    # Enterprise Tools
-    "sap", "oracle erp",
-    "salesforce", "dynamics 365",
-    "crm tools", "marketing automation",
-
-    # Scientific / Specialized
-    "genomics", "bioinformatics",
-    "qiskit", "linear algebra",
-    "quantum algorithms",
+    # IoT / Robotics
+    "arduino", "raspberry pi", "mqtt", "robotics", "ros",
 
     # Soft Skills
-    "problem solving", "debugging",
-    "code review", "technical documentation",
-    "leadership", "product thinking",
-    "customer support", "troubleshooting"
+    "problem solving", "debugging", "leadership",
+    "technical documentation", "product thinking"
 ]
 
 # =====================================================
@@ -252,28 +155,133 @@ def normalize_skill(skill: str) -> str:
     return skill_aliases.get(skill, skill)
 
 # =====================================================
-# OPTIONAL CATEGORY LOOKUP
+# IMPLICIT SKILL INFERENCE MAP
 # =====================================================
 
-def get_skill_category(skill: str):
-    skill = normalize_skill(skill)
+skill_inference_map = {
+    # Data
+    "pandas": [
+        "data cleaning",
+        "data analysis",
+        "data manipulation",
+        "exploratory data analysis"
+    ],
+    "numpy": [
+        "numerical computing",
+        "data analysis"
+    ],
+    "matplotlib": [
+        "data visualization"
+    ],
+    "seaborn": [
+        "data visualization"
+    ],
+    "power bi": [
+        "dashboard development",
+        "business intelligence"
+    ],
+    "tableau": [
+        "dashboard development",
+        "data visualization"
+    ],
+    "excel": [
+        "data cleaning",
+        "reporting",
+        "business analysis"
+    ],
 
-    category_map = {
-        "programming": ["python", "java", "c", "c++", "javascript", "typescript"],
-        "frontend": ["react", "next.js", "vue.js", "angular", "tailwind css"],
-        "backend": ["node.js", "django", "flask", "fastapi", "spring boot"],
-        "database": ["mysql", "postgresql", "mongodb", "redis"],
-        "data_science": ["pandas", "numpy", "power bi", "tableau"],
-        "machine_learning": ["machine learning", "tensorflow", "pytorch", "scikit-learn"],
-        "ai_engineering": ["langchain", "faiss", "retrieval-augmented generation", "prompt engineering"],
-        "cloud_devops": ["aws", "docker", "kubernetes", "terraform"],
-        "cybersecurity": ["penetration testing", "siem", "network security"],
-        "product": ["agile", "scrum", "jira"]
-    }
+    # ML / AI
+    "scikit-learn": [
+        "machine learning",
+        "model building"
+    ],
+    "tensorflow": [
+        "deep learning",
+        "neural networks"
+    ],
+    "pytorch": [
+        "deep learning",
+        "model training"
+    ],
+    "langchain": [
+        "llm applications",
+        "retrieval-augmented generation"
+    ],
+    "faiss": [
+        "vector search",
+        "semantic retrieval"
+    ],
+    "hugging face": [
+        "transformers",
+        "model fine-tuning"
+    ],
 
-    for category, skills in category_map.items():
-        if skill in skills:
-            return category
+    # Frontend
+    "react": [
+        "frontend development",
+        "component architecture"
+    ],
+    "next.js": [
+        "frontend development",
+        "server-side rendering"
+    ],
+    "vue.js": [
+        "frontend development"
+    ],
 
-    return "unknown"
+    # Backend
+    "node.js": [
+        "backend development",
+        "api development"
+    ],
+    "django": [
+        "backend development",
+        "web development"
+    ],
+    "fastapi": [
+        "api development",
+        "backend development"
+    ],
 
+    # DevOps / Cloud
+    "docker": [
+        "containerization"
+    ],
+    "kubernetes": [
+        "container orchestration"
+    ],
+    "aws": [
+        "cloud computing",
+        "deployment"
+    ],
+    "terraform": [
+        "infrastructure as code"
+    ],
+
+    # Security
+    "siem": [
+        "threat monitoring",
+        "incident response"
+    ],
+    "penetration testing": [
+        "ethical hacking",
+        "security auditing"
+    ]
+}
+
+# =====================================================
+# EXPAND IMPLIED SKILLS
+# =====================================================
+
+def expand_inferred_skills(extracted_skills):
+    expanded_skills = set(extracted_skills)
+
+    for skill in extracted_skills:
+        normalized = normalize_skill(skill)
+
+        if normalized in skill_inference_map:
+            expanded_skills.update(
+                skill_inference_map[normalized]
+            )
+
+    return sorted(expanded_skills)
