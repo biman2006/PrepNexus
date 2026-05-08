@@ -12,9 +12,9 @@ def clean_text(text):
     #lower_case 
     text=text.lower()
 
-    #Remove punctuation
-
-    text=text.translate(str.maketrans('','',string.punctuation))
+    #Remove punctuation (except hyphens and underscores for skill names like scikit-learn, node.js, c++)
+    punctuation_to_remove = string.punctuation.replace('-', '').replace('_', '')
+    text=text.translate(str.maketrans('','',punctuation_to_remove))
 
     #Tokenize
 

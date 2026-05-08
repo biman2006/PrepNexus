@@ -1,12 +1,14 @@
+
 import streamlit as st
 import tempfile
 import os
+import re
+import time
 from PIL import Image
 
 # =====================================================
 # BACKEND IMPORTS
 # =====================================================
-
 from utils.pdf_parser import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.skill_extractor import extract_skill
@@ -22,622 +24,404 @@ from data.role_weights import role_skill_weights
 
 from utils.resume_api_builder import generate_resume
 from utils.pdf_exporter import generate_resume_pdf
-
+from utils.auth import generate_otp, send_otp_email
 
 # =====================================================
 # PAGE CONFIG
 # =====================================================
-
 icon = Image.open("assets/icon.png")
+logo = Image.open("assets/logo.png")
 
 st.set_page_config(
     page_title="PrepNexus",
     page_icon=icon,
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
+# =====================================================
+# CUSTOM PROFESSIONAL CSS
+# =====================================================
+st.markdown("""
+<style>
+.main {
+    background: linear-gradient(to bottom right, #0f172a, #1e293b);
+}
+.block-container {
+    padding-top: 2rem;
+}
+h1, h2, h3 {
+    color: white;
+}
+.stButton > button {
+    width: 100%;
+    border-radius: 12px;
+    height: 3em;
+    font-weight: bold;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+}
+.stTextInput > div > div > input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] {
+    border-radius: 10px;
+}
+.metric-card {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 16px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
-# LOAD LOGO
+# EMAIL VALIDATION
 # =====================================================
-
-logo = Image.open("assets/logo.png")
-
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
 
 # =====================================================
-# HEADER
+# SESSION STATE INIT
 # =====================================================
+def init_session():
+    defaults = {
+        "logged_in": False,
+        "otp_sent": False,
+        "generated_otp": "",
+        "user_email": "",
+        "otp_timestamp": 0,
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-col1, col2, col3 = st.columns([1, 2, 1])
+init_session()
 
-with col2:
-    st.image(
-        logo,
-        width=620
+# =====================================================
+# LOGIN PAGE
+# =====================================================
+def login_page():
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        st.image(logo, width=400)
+        st.markdown("# 🔐 Welcome to PrepNexus")
+        st.markdown("### AI-Powered Career Intelligence Platform")
+        st.markdown("Secure OTP-based login system")
+
+        email = st.text_input("📧 Enter Your Email Address")
+
+        if st.button("📩 Send OTP"):
+            if not email:
+                st.warning("Please enter your email address")
+            elif not is_valid_email(email):
+                st.warning("Please enter a valid email")
+            else:
+                otp = generate_otp()
+                success, message = send_otp_email(email, otp)
+
+                if success:
+                    st.session_state.generated_otp = otp
+                    st.session_state.user_email = email
+                    st.session_state.otp_sent = True
+                    st.session_state.otp_timestamp = time.time()
+                    st.success("✅ OTP sent successfully! Please check your inbox.")
+                else:
+                    st.error(f"❌ Failed to send OTP: {message}")
+
+        # OTP Verification Section
+        if st.session_state.otp_sent:
+            st.markdown("---")
+            user_otp = st.text_input("🔑 Enter OTP", max_chars=6)
+
+            if st.button("✅ Verify OTP"):
+                # OTP expiry: 5 minutes
+                if time.time() - st.session_state.otp_timestamp > 300:
+                    st.error("⏰ OTP expired. Please request a new one.")
+                    st.session_state.otp_sent = False
+                    st.session_state.generated_otp = ""
+
+                elif user_otp == st.session_state.generated_otp:
+                    st.session_state.logged_in = True
+                    st.success("🎉 Login successful!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid OTP. Please try again.")
+
+    st.stop()
+
+# =====================================================
+# MAIN APP HEADER
+# =====================================================
+def app_header():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(logo, width=550)
+
+    st.title("🚀 PrepNexus Interview Preparation Platform")
+    st.subheader(
+        "Analyze resumes, identify skill gaps, build ATS-optimized resumes, and accelerate your career growth."
     )
 
-st.title("🚀 PrepNexus Interview Preparation Platform")
-
-st.subheader(
-    "Analyze resumes, identify skill gaps, build ATS-optimized resumes, "
-    "and accelerate your career growth."
-)
-
-
 # =====================================================
-# LOAD VECTORSTORE
+# VECTORSTORE
 # =====================================================
-
 @st.cache_resource
+
 def load_vectorstore():
     embeddings = load_embeddings()
-
-    vectorstore = create_vectorestore(
-        docs,
-        embeddings
-    )
-
-    return vectorstore
-
+    return create_vectorestore(docs, embeddings)
 
 vectorstore = load_vectorstore()
-
-
-# =====================================================
-# AVAILABLE ROLES
-# =====================================================
-
-available_roles = sorted(
-    list(role_skill_weights.keys())
-)
-
+available_roles = sorted(list(role_skill_weights.keys()))
 
 # =====================================================
-# SIDEBAR BRANDING ONLY
+# SIDEBAR
 # =====================================================
+def sidebar():
+    st.sidebar.image(logo, width=220)
+    st.sidebar.markdown("## 🚀 PrepNexus")
+    st.sidebar.markdown(f"### 👤 {st.session_state.user_email}")
 
-st.sidebar.image(
-    logo,
-    width=220
-)
-
-st.sidebar.markdown("## 🚀 PrepNexus")
-st.sidebar.markdown("Career Intelligence Platform")
-
+    if st.sidebar.button("🚪 Logout"):
+        for key in ["logged_in", "otp_sent", "generated_otp", "user_email"]:
+            st.session_state[key] = False if key in ["logged_in", "otp_sent"] else ""
+        st.rerun()
 
 # =====================================================
-# TABS
+# MAIN APP
 # =====================================================
+def main_app():
+    app_header()
+    sidebar()
 
-tab1, tab2 = st.tabs(
-    [
+    tab1, tab2 = st.tabs([
         "📊 Resume Analyzer",
         "📝 AI Resume Builder"
-    ]
-)
+    ])
 
+    # =====================================================
+    # TAB 1
+    # =====================================================
+    with tab1:
+        st.markdown("## 📄 Upload Your Resume")
 
-# =====================================================
-# TAB 1 → RESUME ANALYZER
-# =====================================================
+        upload_file = st.file_uploader(
+            "Upload PDF Resume",
+            type=["pdf"]
+        )
 
-with tab1:
+        target_role = st.selectbox(
+            "🎯 Choose Target Job Role",
+            available_roles
+        )
 
-    st.markdown("---")
+        if st.button("🔍 Analyze Resume"):
+            if upload_file is None:
+                st.warning("Please upload your resume first.")
+            else:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                    tmp_file.write(upload_file.read())
+                    temp_pdf_path = tmp_file.name
 
-    st.markdown("## 📄 Upload Your Resume")
+                resume_text = extract_text_from_pdf(temp_pdf_path)
+                cleaned_resume = clean_text(resume_text)
+                resume_skills = set(extract_skill(cleaned_resume, all_skills))
 
-    upload_file = st.file_uploader(
-        "Upload PDF Resume",
-        type=["pdf"],
-        key="resume_upload"
-    )
+                retrieved_docs = retrieve_role_info(target_role, vectorstore)
+                role_text = retrieved_docs[0].page_content
+                role_skills = set(extract_skill(role_text, all_skills))
 
-    st.markdown("## 🎯 Select Your Target Job Role")
-
-    target_role = st.selectbox(
-        "Choose your desired role",
-        available_roles,
-        key="analyzer_role"
-    )
-
-    analyze = st.button(
-        "🔍 Analyze Resume"
-    )
-
-    if analyze:
-
-        if upload_file is None:
-
-            st.warning(
-                "Please upload your resume PDF first."
-            )
-
-        else:
-
-            # -----------------------------------------
-            # TEMP PDF SAVE
-            # -----------------------------------------
-            with tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix=".pdf"
-            ) as tmp_file:
-
-                tmp_file.write(
-                    upload_file.read()
-                )
-
-                temp_pdf_path = tmp_file.name
-
-
-            # -----------------------------------------
-            # RESUME PROCESSING
-            # -----------------------------------------
-            resume_text = extract_text_from_pdf(
-                temp_pdf_path
-            )
-
-            cleaned_resume = clean_text(
-                resume_text
-            )
-
-            resume_skills = set(
-                extract_skill(
-                    cleaned_resume,
-                    all_skills
-                )
-            )
-
-
-            # -----------------------------------------
-            # ROLE RETRIEVAL
-            # -----------------------------------------
-            retrieved_docs = retrieve_role_info(
-                target_role,
-                vectorstore
-            )
-
-            role_text = retrieved_docs[
-                0
-            ].page_content
-
-            role_skills = set(
-                extract_skill(
-                    role_text,
-                    all_skills
-                )
-            )
-
-
-            # -----------------------------------------
-            # BASIC ATS MATCH
-            # -----------------------------------------
-            matched_skills = role_skills.intersection(
-                resume_skills
-            )
-
-            missing_skills = (
-                role_skills -
-                resume_skills
-            )
-
-            if len(role_skills) > 0:
+                matched_skills = role_skills.intersection(resume_skills)
+                missing_skills = role_skills - resume_skills
 
                 basic_match_score = (
-                    len(matched_skills) /
-                    len(role_skills)
-                ) * 100
-
-            else:
-                basic_match_score = 0
-
-
-            # -----------------------------------------
-            # ADVANCED READINESS
-            # -----------------------------------------
-            weighted_result = calculate_readiness(
-                resume_skills,
-                role_skill_weights[target_role]
-            )
-
-            readiness_score = weighted_result[
-                "readiness_score"
-            ]
-
-
-            # -----------------------------------------
-            # STATUS
-            # -----------------------------------------
-            if readiness_score >= 85:
-                status = "Highly Job Ready"
-
-            elif readiness_score >= 70:
-                status = "Job Ready"
-
-            elif readiness_score >= 50:
-                status = "Moderate Readiness"
-
-            else:
-                status = "Significant Skill Gap"
-
-
-            # =====================================================
-            # RESULTS DASHBOARD
-            # =====================================================
-
-            st.markdown("---")
-
-            st.success(
-                "Resume Analysis Complete!"
-            )
-
-
-            # -----------------------------------------
-            # METRICS
-            # -----------------------------------------
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                st.metric(
-                    "ATS Match Score",
-                    f"{basic_match_score:.2f}%"
+                    (len(matched_skills) / len(role_skills)) * 100
+                    if role_skills else 0
                 )
 
-            with col2:
-                st.metric(
-                    "Career Readiness Score",
-                    f"{readiness_score:.2f}%"
+                weighted_result = calculate_readiness(
+                    resume_skills,
+                    role_skill_weights[target_role]
                 )
 
-            with col3:
-                st.metric(
-                    "Candidate Status",
-                    status
+                readiness_score = weighted_result["readiness_score"]
+
+                st.success("✅ Resume Analysis Complete")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("ATS Match Score", f"{basic_match_score:.2f}%")
+                with col2:
+                    st.metric("Career Readiness", f"{readiness_score:.2f}%")
+
+                st.subheader("📊 Performance Dashboard")
+                st.write("ATS Match score")
+                st.progress(int(basic_match_score))
+
+                st.write("Career Readiness Score")
+                st.progress(
+                    int(readiness_score)
                 )
 
+                st.subheader("📌 Missing Skills")
+                st.write(sorted(missing_skills))
 
-            st.markdown("---")
+                st.subheader("✅ Matched Skills")
+                st.write(sorted(matched_skills))
 
+                           # =====================================================
+# CAREER PREFERENCE
+# =====================================================
 
-            # -----------------------------------------
-            # PERFORMANCE
-            # -----------------------------------------
-            st.subheader(
-                "📊 Performance Dashboard"
-            )
-
-            st.write("ATS Match Score")
-            st.progress(
-                int(basic_match_score)
-            )
-
-            st.write("Career Readiness Score")
-            st.progress(
-                int(readiness_score)
-            )
+                st.markdown("---")
+                st.subheader("🎯 Career Preference")
+                st.write(target_role)
 
 
-            st.markdown("---")
+# =====================================================
+# ROLE DESCRIPTION
+# =====================================================
+
+                st.subheader("📘 Role Description")
+                st.write(role_text)
 
 
-            # -----------------------------------------
-            # ROLE DESCRIPTION
-            # -----------------------------------------
-            st.subheader(
-                "🎯 Retrieved Job Role Description"
-            )
+# =====================================================
+# REQUIRED SKILLS
+# =====================================================
 
-            st.write(role_text)
+                st.subheader("📌 Required Skills")
+                st.write(sorted(role_skills))
 
 
-            st.markdown("---")
+# =====================================================
+# CORE / SECONDARY / ADVANCED BREAKDOWN
+# =====================================================
+
+                st.markdown("---")
+                st.subheader("🚀 Advanced Skill Breakdown")
+
+                col_core, col_secondary, col_advanced = st.columns(3)
+
+                with col_core:
+                  st.markdown("### 🧠 Core Skills")
+                  st.write("Matched:", sorted(weighted_result["core_matched"]))
+                  st.write("Missing:", sorted(weighted_result["missing_core"]))
+
+                with col_secondary:
+                  st.markdown("### ⚙️ Secondary Skills")
+                  st.write("Matched:", sorted(weighted_result["secondary_matched"]))
+                  st.write("Missing:", sorted(weighted_result["missing_secondary"]))
+
+                with col_advanced:
+                  st.markdown("### 🔬 Advanced Skills")
+                  st.write("Matched:", sorted(weighted_result["advanced_matched"]))
+                  st.write("Missing:", sorted(weighted_result["missing_advanced"]))
 
 
-            # -----------------------------------------
-            # SKILLS SECTION
-            # -----------------------------------------
-            skill_col1, skill_col2 = st.columns(2)
+# =====================================================
+# STATUS
+# =====================================================
 
-            with skill_col1:
+                st.markdown("---")
+                st.subheader("📈 Candidate Status")
 
-                st.subheader(
-                    "🧠 Your Resume Skills"
-                )
+                if readiness_score >= 85:
+                   st.success("Highly Job Ready")
 
-                st.write(
-                    sorted(resume_skills)
-                )
+                elif readiness_score >= 70:
+                   st.info("Job Ready")
 
-                st.subheader(
-                    "✅ Matched Skills"
-                )
+                elif readiness_score >= 50:
+                  st.warning("Moderate Readiness")
 
-                st.write(
-                    sorted(matched_skills)
-                )
-
-            with skill_col2:
-
-                st.subheader(
-                    "📌 Required Skills"
-                )
-
-                st.write(
-                    sorted(role_skills)
-                )
-
-                st.subheader(
-                    "❌ Missing Skills"
-                )
-
-                st.write(
-                    sorted(missing_skills)
-                )
+                else:
+                 st.error("Significant Skill Gap")
 
 
-            st.markdown("---")
+# =====================================================
+# RECOMMENDATION
+# =====================================================
 
+                st.subheader("💡 Career Recommendation")
 
-            # -----------------------------------------
-            # ADVANCED BREAKDOWN
-            # -----------------------------------------
-            st.subheader(
-                "🚀 Advanced Readiness Breakdown"
-            )
+                if readiness_score >= 85:
+                  st.success(
+                     "You are highly competitive. Focus on portfolio, projects, and interviews."
+                     )
+   
+                elif readiness_score >= 70:
+                 st.info(
+                    "You are job-ready. Strengthen secondary and advanced skills."
+                     )
 
-            col4, col5, col6 = st.columns(3)
-
-            with col4:
-
-                st.markdown(
-                    "### Core Skills"
-                )
-
-                st.write(
-                    "Matched:",
-                    sorted(
-                        weighted_result[
-                            "core_matched"
-                        ]
-                    )
-                )
-
-                st.write(
-                    "Missing:",
-                    sorted(
-                        weighted_result[
-                            "missing_core"
-                        ]
-                    )
-                )
-
-            with col5:
-
-                st.markdown(
-                    "### Secondary Skills"
-                )
-
-                st.write(
-                    "Matched:",
-                    sorted(
-                        weighted_result[
-                            "secondary_matched"
-                        ]
-                    )
-                )
-
-                st.write(
-                    "Missing:",
-                    sorted(
-                        weighted_result[
-                            "missing_secondary"
-                        ]
-                    )
-                )
-
-            with col6:
-
-                st.markdown(
-                    "### Advanced Skills"
-                )
-
-                st.write(
-                    "Matched:",
-                    sorted(
-                        weighted_result[
-                            "advanced_matched"
-                        ]
-                    )
-                )
-
-                st.write(
-                    "Missing:",
-                    sorted(
-                        weighted_result[
-                            "missing_advanced"
-                        ]
-                    )
-                )
-
-
-            st.markdown("---")
-
-
-            # -----------------------------------------
-            # CAREER RECOMMENDATION
-            # -----------------------------------------
-            st.subheader(
-                "📈 Career Recommendation"
-            )
-
-            if readiness_score >= 85:
-
-                st.success(
-                    "You are highly competitive for this role. "
-                    "Focus on projects, portfolio, and interview mastery."
-                )
-
-            elif readiness_score >= 70:
-
-                st.info(
-                    "You are job-ready. Strengthening secondary "
-                    "and advanced skills will increase competitiveness."
-                )
-
-            elif readiness_score >= 50:
-
-                st.warning(
-                    "You have moderate readiness. "
+                elif readiness_score >= 50:
+                  st.warning(
                     "Focus on missing core skills first."
-                )
+                    )
 
-            else:
+                else:
+                  st.error(
+                     "Prioritize foundational skill development before applying aggressively."
+                      )
 
-                st.error(
-                    """
-                    Significant skill gap detected.
-                    Prioritize foundational core skill development.
-                    """
-                )
+                os.remove(temp_pdf_path)
 
+    # =====================================================
+    # TAB 2
+    # =====================================================
+    with tab2:
+        st.markdown("## 📝 Build Your ATS Resume")
 
-            # -----------------------------------------
-            # CLEANUP
-            # -----------------------------------------
-            os.remove(
-                temp_pdf_path
+        name = st.text_input("Full Name")
+        email = st.text_input("Email", value=st.session_state.user_email)
+        phone = st.text_input("Phone Number")
+        role = st.selectbox("Target Role", available_roles)
+
+        skills = st.text_area("Skills")
+        experience = st.text_area("Experience")
+        projects = st.text_area("Projects")
+        education = st.text_area("Education")
+
+        if st.button("🚀 Generate Resume"):
+            generated_resume = generate_resume(
+                name=name,
+                email=email,
+                phone=phone,
+                target_role=role,
+                skills=skills,
+                experience=experience,
+                projects=projects,
+                education=education
             )
 
+            st.success("✅ Resume Generated Successfully")
+            st.text_area("Resume Preview", generated_resume, height=600)
+
+            pdf_path = generate_resume_pdf(generated_resume)
+
+            with open(pdf_path, "rb") as pdf_file:
+                st.download_button(
+                    label="📥 Download Resume PDF",
+                    data=pdf_file,
+                    file_name="PrepNexus_Resume.pdf",
+                    mime="application/pdf"
+                )
 
 # =====================================================
-# TAB 2 → AI RESUME BUILDER
+# ROUTER
 # =====================================================
-
-with tab2:
-
-    st.markdown("---")
-
-    st.markdown(
-        "## 📝 Build Your ATS-Optimized Resume"
-    )
-
-
-    # -----------------------------------------
-    # PERSONAL INFO
-    # -----------------------------------------
-    info_col1, info_col2 = st.columns(2)
-
-    with info_col1:
-
-        name = st.text_input(
-            "Full Name"
-        )
-
-        email = st.text_input(
-            "Email Address"
-        )
-
-        phone = st.text_input(
-            "Phone Number"
-        )
-
-    with info_col2:
-
-        builder_role = st.selectbox(
-            "Target Job Role",
-            available_roles,
-            key="builder_role"
-        )
-
-
-    st.markdown("---")
-
-
-    # -----------------------------------------
-    # RESUME DETAILS
-    # -----------------------------------------
-    skills = st.text_area(
-        "Skills (comma separated)",
-        height=120
-    )
-
-    experience = st.text_area(
-        "Experience / Internships",
-        height=180
-    )
-
-    projects = st.text_area(
-        "Projects",
-        height=180
-    )
-
-    education = st.text_area(
-        "Education",
-        height=120
-    )
-
-
-    generate_btn = st.button(
-        "🚀 Generate ATS Resume"
-    )
-
-
-    if generate_btn:
-
-        generated_resume = generate_resume(
-            name=name,
-            email=email,
-            phone=phone,
-            target_role=builder_role,
-            skills=skills,
-            experience=experience,
-            projects=projects,
-            education=education
-        )
-
-        st.success(
-            "Resume Generated Successfully!"
-        )
-
-        st.markdown("---")
-
-        st.subheader(
-            "📄 Generated Resume Preview"
-        )
-
-        st.text_area(
-            "Resume Content",
-            generated_resume,
-            height=700
-        )
-
-
-        # -----------------------------------------
-        # PDF GENERATION
-        # -----------------------------------------
-        pdf_path = generate_resume_pdf(
-            generated_resume
-        )
-
-        with open(
-            pdf_path,
-            "rb"
-        ) as pdf_file:
-
-            st.download_button(
-                label="📥 Download Resume PDF",
-                data=pdf_file,
-                file_name="PrepNexus_Resume.pdf",
-                mime="application/pdf"
-            )
-
+if not st.session_state.logged_in:
+    login_page()
+else:
+    main_app()
 
 # =====================================================
 # FOOTER
 # =====================================================
-
 st.markdown("---")
-
-st.caption(
-    "PrepNexus © AI-Powered Career Intelligence Platform"
-)
+st.caption("PrepNexus © AI-Powered Career Intelligence Platform")

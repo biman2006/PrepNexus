@@ -3,107 +3,263 @@
 
 
 
-"""
-Enhanced Master Skills Database
-Production-grade for:
-- Resume parsing
-- ATS systems
-- Job-role matching
-- RAG pipelines
-- Semantic search
-- Startup hiring intelligence
-"""
+# =========================================================
+# PrepNexus Production-Grade Master Skills Database
+# Startup-Level Scalable Skill Intelligence System
+# =========================================================
 
-# =====================================================
-# MASTER SKILL LIST
-# =====================================================
+# ---------------------------------------------------------
+# CORE MASTER SKILLS
+# ---------------------------------------------------------
 
 all_skills = [
+
+    # =====================================================
     # Programming Languages
-    "python", "c", "c++", "java", "javascript", "typescript", "sql",
-    "html", "css", "bash", "powershell", "go", "rust", "kotlin",
-    "swift", "php", "ruby", "r", "matlab", "scala", "perl",
+    # =====================================================
+    "python", "java", "c", "c++", "c#", "javascript",
+    "typescript", "php", "ruby", "go", "rust",
+    "kotlin", "swift", "dart", "r", "sql",
+    "html", "css", "bash", "powershell",
 
-    # Core CS
-    "data structures", "algorithms", "oop", "object oriented programming",
-    "dbms", "operating systems", "computer networks", "system design",
+    # =====================================================
+    # Computer Science Fundamentals
+    # =====================================================
+    "data structures", "algorithms",
+    "object-oriented programming",
+    "dbms", "operating systems",
+    "computer networks", "system design",
+    "software engineering",
 
-    # Frontend
-    "react", "next.js", "vue.js", "angular", "tailwind css",
-    "bootstrap", "redux", "html5", "css3", "responsive design",
+    # =====================================================
+    # Frontend Development
+    # =====================================================
+    "react", "next.js", "angular", "vue.js",
+    "tailwind css", "bootstrap",
+    "responsive design", "graphql",
+    "rest api", "webpack", "vite",
 
-    # Backend
-    "node.js", "express.js", "django", "flask", "fastapi",
-    "spring boot", "rest api", "graphql", "jwt", "oauth",
+    # =====================================================
+    # Backend Development
+    # =====================================================
+    "node.js", "express.js",
+    "django", "flask", "fastapi",
+    "spring boot", "laravel",
+    "authentication", "jwt", "oauth",
+    "microservices", "deployment",
 
-    # Databases
-    "mysql", "postgresql", "mongodb", "redis", "sqlite",
-    "snowflake", "bigquery", "etl", "data warehousing",
+    # =====================================================
+    # Databases / Data Infrastructure
+    # =====================================================
+    "mysql", "postgresql", "mongodb",
+    "redis", "sqlite", "oracle",
+    "snowflake", "bigquery",
+    "etl", "data warehousing",
 
-    # Mobile
-    "flutter", "dart", "react native", "android", "kotlin", "swift",
+    # =====================================================
+    # Mobile Development
+    # =====================================================
+    "android studio", "kotlin",
+    "jetpack compose",
+    "swiftui", "xcode",
+    "flutter", "firebase",
 
-    # Data Analysis
-    "excel", "power bi", "tableau", "pandas", "numpy",
-    "matplotlib", "seaborn", "statistics", "probability",
-    "data cleaning", "exploratory data analysis", "feature engineering",
-    "dashboard development", "data visualization",
+    # =====================================================
+    # Desktop / Game Development
+    # =====================================================
+    "electron.js", "pyqt",
+    "unity", "unreal engine",
 
-    # Big Data
-    "apache spark", "hadoop", "kafka", "airflow",
+    # =====================================================
+    # Data Analysis / Business Intelligence
+    # =====================================================
+    "excel", "power bi", "tableau",
+    "pandas", "numpy",
+    "statistics", "data visualization",
 
-    # Machine Learning
-    "machine learning", "linear regression", "logistic regression",
-    "decision trees", "random forest", "gradient descent",
-    "xgboost", "lightgbm", "scikit-learn", "mlops",
+    # =====================================================
+    # Data Science / Machine Learning
+    # =====================================================
+    "machine learning",
+    "deep learning",
+    "scikit learn",
+    "tensorflow",
+    "pytorch",
+    "mlops",
 
-    # Deep Learning
-    "tensorflow", "pytorch", "keras", "cnn", "rnn", "lstm",
-    "transformers", "bert", "gpt", "large language models",
-    "fine-tuning", "lora", "qlora",
+    # =====================================================
+    # AI / LLM Engineering
+    # =====================================================
+    "natural language processing",
+    "computer vision",
+    "transformers",
+    "large language models",
+    "langchain",
+    "llamaindex",
+    "retrieval-augmented generation",
+    "vector databases",
+    "faiss",
+    "chromadb",
+    "pinecone",
+    "fine-tuning",
+    "prompt engineering",
+    "agentic ai",
+    "openai api",
+    "hugging face",
+    "streamlit",
+    "gradio",
+    "langgraph",
+    "crew ai",
+    "autogen",
 
-    # AI / LLMOps
-    "natural language processing", "computer vision",
-    "langchain", "llamaindex", "retrieval-augmented generation",
-    "rag", "faiss", "chromadb", "pinecone",
-    "prompt engineering", "openai api", "hugging face",
-    "langgraph", "streamlit", "gradio",
-    "semantic search", "multi-agent systems",
+    # =====================================================
+    # Data Engineering / Big Data
+    # =====================================================
+    "apache spark",
+    "hadoop",
+    "kafka",
+    "airflow",
 
-    # Cloud / DevOps
-    "aws", "azure", "google cloud platform",
-    "docker", "kubernetes", "terraform",
-    "ci/cd", "jenkins", "github actions",
-    "linux", "prometheus", "grafana",
+    # =====================================================
+    # Cloud / DevOps / SRE
+    # =====================================================
+    "linux",
+    "docker",
+    "kubernetes",
+    "jenkins",
+    "github actions",
+    "terraform",
+    "ansible",
+    "aws",
+    "azure",
+    "google cloud platform",
+    "cloud architecture",
+    "ci/cd",
+    "prometheus",
+    "grafana",
 
+    # =====================================================
     # Cybersecurity
-    "network security", "siem", "penetration testing",
-    "ethical hacking", "incident response",
+    # =====================================================
+    "network security",
+    "siem",
+    "threat detection",
+    "incident response",
+    "firewalls",
+    "owasp",
+    "penetration testing",
+    "splunk",
+    "encryption",
 
-    # Testing
-    "selenium", "playwright", "pytest", "junit",
-    "manual testing", "api testing",
+    # =====================================================
+    # Networking / Infrastructure
+    # =====================================================
+    "networking",
+    "tcp/ip",
+    "routing",
+    "switching",
+    "cisco",
+    "vpn",
+    "windows server",
+    "active directory",
 
-    # UI/UX
-    "figma", "adobe xd", "wireframing", "prototyping",
+    # =====================================================
+    # QA / Testing
+    # =====================================================
+    "manual testing",
+    "selenium",
+    "cypress",
+    "playwright",
+    "api testing",
+    "test automation",
+    "jmeter",
 
-    # Product
-    "agile", "scrum", "jira", "product strategy",
+    # =====================================================
+    # UI / UX Design
+    # =====================================================
+    "figma",
+    "adobe xd",
+    "wireframing",
+    "design systems",
+    "user research",
 
-    # Blockchain
-    "solidity", "ethereum", "web3", "smart contracts",
+    # =====================================================
+    # Product / Business / Collaboration
+    # =====================================================
+    "agile",
+    "scrum",
+    "roadmapping",
+    "stakeholder management",
+    "product strategy",
+    "jira",
+    "confluence",
+    "notion",
+    "slack",
 
-    # IoT / Robotics
-    "arduino", "raspberry pi", "mqtt", "robotics", "ros",
+    # =====================================================
+    # Blockchain / Web3
+    # =====================================================
+    "solidity",
+    "ethereum",
+    "smart contracts",
+    "web3.js",
 
-    # Soft Skills
-    "problem solving", "debugging", "leadership",
-    "technical documentation", "product thinking"
+    # =====================================================
+    # Embedded / IoT / Robotics
+    # =====================================================
+    "microcontrollers",
+    "rtos",
+    "arduino",
+    "raspberry pi",
+    "mqtt",
+    "ros",
+    "control systems",
+
+    # =====================================================
+    # AR / VR
+    # =====================================================
+    "xr sdk",
+    "3d graphics",
+
+    # =====================================================
+    # Enterprise Platforms
+    # =====================================================
+    "sap",
+    "oracle erp",
+    "salesforce",
+    "crm tools",
+
+    # =====================================================
+    # Marketing / Analytics
+    # =====================================================
+    "google analytics",
+    "seo",
+    "marketing automation",
+
+    # =====================================================
+    # Scientific / Specialized
+    # =====================================================
+    "bioinformatics",
+    "genomics",
+    "qiskit",
+    "quantum computing",
+
+    # =====================================================
+    # Professional Skills
+    # =====================================================
+    "git",
+    "github",
+    "problem solving",
+    "debugging",
+    "technical documentation",
+    "leadership",
+    "troubleshooting",
+    "customer support"
 ]
 
-# =====================================================
-# SKILL ALIASES / NORMALIZATION
-# =====================================================
+# ---------------------------------------------------------
+# SKILL ALIASES
+# ---------------------------------------------------------
 
 skill_aliases = {
     "py": "python",
@@ -123,7 +279,6 @@ skill_aliases = {
     "cv": "computer vision",
     "llm": "large language models",
     "llms": "large language models",
-    "genai": "generative ai",
     "rag": "retrieval-augmented generation",
     "postgres": "postgresql",
     "mongo": "mongodb",
@@ -131,50 +286,48 @@ skill_aliases = {
     "k8s": "kubernetes",
     "tf": "tensorflow",
     "hf": "hugging face",
-    "pbi": "power bi"
+    "pbi": "power bi",
+    "sklearn": "scikit-learn",
+    "gen ai": "generative ai",
+    "llmops": "large language models"
 }
 
-# =====================================================
-# MASTER SKILLS BUILD
-# =====================================================
+# ---------------------------------------------------------
+# MASTER SKILL BUILDER
+# ---------------------------------------------------------
 
 def build_master_skills():
     combined_skills = list(all_skills)
     combined_skills.extend(skill_aliases.keys())
-    return sorted(set(skill.lower() for skill in combined_skills))
 
+    return sorted(
+        set(skill.lower() for skill in combined_skills)
+    )
 
 ALL_SKILLS = build_master_skills()
 
-# =====================================================
-# NORMALIZE SKILL
-# =====================================================
+# ---------------------------------------------------------
+# NORMALIZATION FUNCTION
+# ---------------------------------------------------------
 
 def normalize_skill(skill: str) -> str:
     skill = skill.strip().lower()
     return skill_aliases.get(skill, skill)
 
-# =====================================================
+# ---------------------------------------------------------
 # IMPLICIT SKILL INFERENCE MAP
-# =====================================================
+# ---------------------------------------------------------
 
 skill_inference_map = {
-    # Data
+
+    # Data / BI
     "pandas": [
-        "data cleaning",
         "data analysis",
         "data manipulation",
-        "exploratory data analysis"
+        "data cleaning"
     ],
     "numpy": [
-        "numerical computing",
         "data analysis"
-    ],
-    "matplotlib": [
-        "data visualization"
-    ],
-    "seaborn": [
-        "data visualization"
     ],
     "power bi": [
         "dashboard development",
@@ -184,66 +337,46 @@ skill_inference_map = {
         "dashboard development",
         "data visualization"
     ],
-    "excel": [
-        "data cleaning",
-        "reporting",
-        "business analysis"
-    ],
 
     # ML / AI
     "scikit-learn": [
-        "machine learning",
-        "model building"
+        "machine learning"
     ],
     "tensorflow": [
-        "deep learning",
-        "neural networks"
+        "deep learning"
     ],
     "pytorch": [
-        "deep learning",
-        "model training"
+        "deep learning"
     ],
     "langchain": [
-        "llm applications",
-        "retrieval-augmented generation"
+        "retrieval-augmented generation",
+        "llm applications"
     ],
     "faiss": [
         "vector search",
         "semantic retrieval"
     ],
-    "hugging face": [
-        "transformers",
-        "model fine-tuning"
-    ],
 
     # Frontend
     "react": [
-        "frontend development",
-        "component architecture"
+        "frontend development"
     ],
     "next.js": [
-        "frontend development",
-        "server-side rendering"
-    ],
-    "vue.js": [
         "frontend development"
     ],
 
     # Backend
     "node.js": [
-        "backend development",
-        "api development"
+        "backend development"
     ],
     "django": [
-        "backend development",
-        "web development"
+        "backend development"
     ],
     "fastapi": [
-        "api development",
         "backend development"
     ],
 
-    # DevOps / Cloud
+    # DevOps
     "docker": [
         "containerization"
     ],
@@ -251,27 +384,13 @@ skill_inference_map = {
         "container orchestration"
     ],
     "aws": [
-        "cloud computing",
-        "deployment"
-    ],
-    "terraform": [
-        "infrastructure as code"
-    ],
-
-    # Security
-    "siem": [
-        "threat monitoring",
-        "incident response"
-    ],
-    "penetration testing": [
-        "ethical hacking",
-        "security auditing"
+        "cloud computing"
     ]
 }
 
-# =====================================================
-# EXPAND IMPLIED SKILLS
-# =====================================================
+# ---------------------------------------------------------
+# SKILL EXPANSION FUNCTION
+# ---------------------------------------------------------
 
 def expand_inferred_skills(extracted_skills):
     expanded_skills = set(extracted_skills)
