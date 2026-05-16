@@ -91,6 +91,46 @@ PrepNexus is built to evolve beyond resume intelligence into a **full gamified i
 ## 📝 AI ATS Resume Builder
 ![Resume Builder](assets/demo/resume_builder.png)
 
+
+
+# ⚙️ Working Architecture
+
+## 🔄 End-to-End Workflow
+
+```txt
+User Login / Signup
+        ↓
+Secure Authentication
+        ↓
+Dashboard Access
+        ↓
+--------------------------------------------------
+|                CORE MODULES                     |
+--------------------------------------------------
+| Resume Analyzer                                 |
+| - PDF Upload                                    |
+| - PDF Parsing                                   |
+| - Text Cleaning                                 |
+| - Skill Extraction                              |
+| - FAISS Role Matching                           |
+| - ATS Score                                     |
+| - Readiness Score                               |
+| - Missing Skills Detection                      |
+| - Dashboard Visualization                       |
+--------------------------------------------------
+| ATS Resume Builder                              |
+| - User Career Inputs                            |
+| - Gemini AI Resume Generation                   |
+| - ATS Optimization                              |
+| - PDF Export                                    |
+--------------------------------------------------
+        ↓
+User Receives:
+- Resume Intelligence
+- Skill Gap Analysis
+- Career Recommendations
+- ATS Resume PDF
+
 # 🛠️ Tech Stack
 
 ## Frontend
