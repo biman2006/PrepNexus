@@ -1,4 +1,5 @@
 import string
+import re
 
 try:
     import nltk
@@ -16,21 +17,28 @@ except ImportError as exc:
 try:
     nltk.data.find("tokenizers/punkt")
 except LookupError:
-    nltk.download("punkt", quiet=True)
-    nltk.download("punkt_tab", quiet=True)
+    try:
+        nltk.download("punkt", quiet=True)
+    except Exception:
+        # If downloader is unavailable (deployed env), continue and use fallback tokenizer
+        pass
 
 try:
     nltk.data.find("corpora/stopwords")
 except LookupError:
-    nltk.download("stopwords", quiet=True)
+    try:
+        nltk.download("stopwords", quiet=True)
+    except Exception:
+        pass
 
 
 # =====================================================
 # STOPWORDS
 # =====================================================
-stop_words = set(
-    stopwords.words("english")
-)
+try:
+    stop_words = set(stopwords.words("english"))
+except Exception:
+    stop_words = set()
 
 
 # =====================================================
@@ -61,8 +69,12 @@ def clean_text(text):
         )
     )
 
-    # Tokenize
-    words = word_tokenize(text)
+    # Tokenize (use NLTK if available, otherwise fallback)
+    try:
+        words = word_tokenize(text)
+    except Exception:
+        # simple fallback tokenizer: words with alphanumerics and underscores
+        words = re.findall(r"\b[\w'-]+\b", text)
 
     # Remove stopwords
     filtered_words = [
