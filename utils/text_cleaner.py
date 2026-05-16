@@ -9,30 +9,68 @@ except ImportError as exc:
         "NLTK is required for text cleaning. Install it with: pip install nltk"
     ) from exc
 
-nltk.download('punkt', quiet=True)
-nltk.download('stopwords', quiet=True)
 
-stop_words = set(stopwords.words("english"))
+# =====================================================
+# ENSURE REQUIRED NLTK DATA
+# =====================================================
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt", quiet=True)
+    nltk.download("punkt_tab", quiet=True)
 
+try:
+    nltk.data.find("corpora/stopwords")
+except LookupError:
+    nltk.download("stopwords", quiet=True)
+
+
+# =====================================================
+# STOPWORDS
+# =====================================================
+stop_words = set(
+    stopwords.words("english")
+)
+
+
+# =====================================================
+# CLEAN TEXT FUNCTION
+# =====================================================
 def clean_text(text):
+    """
+    Cleans resume text while preserving
+    important technical skill formatting.
+    """
 
-    #lower_case 
-    text=text.lower()
+    # Lowercase
+    text = text.lower()
 
-    #Remove punctuation (except hyphens and underscores for skill names like scikit-learn, node.js, c++)
-    punctuation_to_remove = string.punctuation.replace('-', '').replace('_', '')
-    text=text.translate(str.maketrans('','',punctuation_to_remove))
+    # Remove punctuation
+    # Preserve hyphens + underscores
+    punctuation_to_remove = (
+        string.punctuation
+        .replace('-', '')
+        .replace('_', '')
+    )
 
-    #Tokenize
+    text = text.translate(
+        str.maketrans(
+            '',
+            '',
+            punctuation_to_remove
+        )
+    )
 
-    words=word_tokenize(text)
+    # Tokenize
+    words = word_tokenize(text)
 
-    #remove stopwords 
+    # Remove stopwords
+    filtered_words = [
+        word for word in words
+        if word not in stop_words
+    ]
 
-    filtered_words=[word for word in words if word not in stop_words]
+    # Join back
+    cleaned_text = " ".join(filtered_words)
 
-    #join back to string 
-    cleand_text=" ".join(filtered_words)
-
-    return cleand_text
-
+    return cleaned_text
