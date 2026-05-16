@@ -5,6 +5,7 @@ import os
 import re
 import time
 from PIL import Image
+from langchain_community.vectorstores import FAISS
 
 # =====================================================
 # BACKEND IMPORTS
@@ -15,14 +16,14 @@ from utils.skill_extractor import extract_skill,normalize_skill
 from utils.readiness_scorer import calculate_readiness
 
 from rag.embedder import load_embeddings
-from rag.retriever import retrieve_role_info
+
 from rag.vector_store import create_vectorestore
 
 from data.all_skills import all_skills
 from data.job_roles import docs
 from data.role_weights import role_skill_weights
 
-from utils.resume_api_builder import generate_resume
+
 from utils.pdf_exporter import generate_resume_pdf
 from utils.auth import hash_password
 
@@ -270,7 +271,21 @@ def app_header():
 
 def load_vectorstore():
     embeddings = load_embeddings()
-    return create_vectorestore(docs, embeddings)
+    index_dir = os.path.join(os.path.dirname(__file__), "rag", "job_index")
+
+    if not os.path.exists(index_dir):
+        raise FileNotFoundError(
+            f"FAISS index directory not found: {index_dir}. "
+            "Make sure rag/job_index is included in the deployed app."
+        )
+
+    vectorestore = FAISS.load_local(
+        index_dir,
+        embeddings,
+        allow_dangerous_deserialization=True
+    )
+
+    return vectorestore
 
 
 available_roles = sorted(list(role_skill_weights.keys()))
@@ -520,8 +535,19 @@ def main_app():
                 st.warning("Please upload your resume first.")
             else:
 
-                with st.spinner("Loading AI analysis engine..."):
-                   vectorstore=load_vectorstore()
+                from rag.retriever import retrieve_role_info
+
+                try:
+                    with st.spinner("Loading AI analysis engine..."):
+                        vectorstore = load_vectorstore()
+                except Exception as e:
+                    st.error(
+                        "Failed to load the resume analysis engine. "
+                        "Please verify the deployed FAISS index files."
+                    )
+                    st.exception(e)
+                    st.stop()
+
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                     tmp_file.write(upload_file.read())
                     temp_pdf_path = tmp_file.name
@@ -749,6 +775,7 @@ def main_app():
         education = st.text_area("Education")
 
         if st.button("🚀 Generate Resume"):
+            from utils.resume_api_builder import generate_resume
             generated_resume = generate_resume(
                 name=name,
                 email=email,
