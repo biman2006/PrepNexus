@@ -39,11 +39,35 @@ SKILL_ALIASES = {
     "javascript": "javascript",
     "js": "javascript",
 
+    "node": "node",
     "nodejs": "nodejs",
     "node js": "nodejs",
+    "node.js": "nodejs",
 
+    "react": "react",
     "reactjs": "react",
     "react js": "react",
+    "react.js": "react",
+
+    "next": "nextjs",
+    "next.js": "nextjs",
+    "next js": "nextjs",
+    "nextjs": "nextjs",
+
+    "express": "expressjs",
+    "express.js": "expressjs",
+    "express js": "expressjs",
+    "expressjs": "expressjs",
+
+    "vue": "vuejs",
+    "vue.js": "vuejs",
+    "vue js": "vuejs",
+    "vuejs": "vuejs",
+
+    "ci/cd": "ci cd",
+    "ci cd": "ci cd",
+
+    "c++": "c",
 
     # Cloud
     "aws": "amazon web services",
@@ -69,7 +93,7 @@ def normalize_text(text):
     text = text.lower()
 
     # Replace separators
-    text = text.replace("-", " ").replace("_", " ")
+    text = text.replace("-", " ").replace("_", " ").replace("/", " ")
 
     # Alias replacements
     replacements = {
@@ -105,6 +129,8 @@ def normalize_skill(skill):
         skill.lower()
         .replace("-", " ")
         .replace("_", " ")
+        .replace(".", " ")
+        .replace("/", " ")
         .strip()
     )
 
@@ -114,7 +140,7 @@ def normalize_skill(skill):
         normalized
     )
 
-    return aliased.replace("-", " ").strip()
+    return " ".join(aliased.split())
 
 
 # =====================================================

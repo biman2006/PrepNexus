@@ -357,6 +357,7 @@ def render_skill_category(title, matched, missing, color):
 
     # Progress
     st.metric("Completion", f"{progress}%")
+    st.caption(f"{len(matched)} of {total} skills matched")
     st.progress(progress)
 
     # Matched Skills
@@ -464,9 +465,13 @@ def display_skill(skill):
         "html": "HTML",
         "css": "CSS",
         "react": "React",
+        "react.js": "React.js",
         "reactjs": "React.js",
+        "next.js": "Next.js",
         "nextjs": "Next.js",
+        "node.js": "Node.js",
         "nodejs": "Node.js",
+        "express.js": "Express.js",
         "expressjs": "Express.js",
         "fastapi": "FastAPI",
         "flask": "Flask",
@@ -492,6 +497,14 @@ def display_skill(skill):
         "github": "GitHub",
         "gitlab": "GitLab",
         "ci cd": "CI/CD",
+        "ci/cd": "CI/CD",
+        "mlops": "MLOps",
+        "llms": "LLMs",
+        "fine tuning": "Fine-tuning",
+        "openai api": "OpenAI API",
+        "large language models": "Large Language Models",
+        "prompt engineering": "Prompt Engineering",
+        "retrieval augmented generation": "RAG",
 
         # =====================================================
         # SECURITY / AUTH
@@ -584,24 +597,27 @@ def main_app():
                         return
 
                     role_text = retrieved_docs[0].page_content
-                    role_skills = set(
+                    extracted_role_skills = set(
                         normalize_skill(skill)
                         for skill in extract_skill(role_text, all_skills)
                     )
 
-                    if not role_skills:
+                    expected_role_skills = set(
+                        normalize_skill(skill)
+                        for section in role_skill_weights[target_role].values()
+                        for skill in section
+                    )
+
+                    use_expected_role_skills = not extracted_role_skills
+                    if use_expected_role_skills:
                         st.warning(
-                            "No skills could be extracted for this role description. "
-                            "Using the expected skills defined for the selected role instead."
-                        )
-                        role_skills = set(
-                            normalize_skill(skill)
-                            for section in role_skill_weights[target_role].values()
-                            for skill in section
+                            "No skills could be extracted from the role text. "
+                            "Showing the expected role skills for the selected position."
                         )
 
-                    matched_skills = role_skills.intersection(resume_skills)
-                    missing_skills = role_skills - resume_skills
+                    role_skills = extracted_role_skills.union(expected_role_skills)
+                    matched_skills = expected_role_skills.intersection(resume_skills)
+                    missing_skills = expected_role_skills - resume_skills
 
                     basic_match_score = (
                         (len(matched_skills) / len(role_skills)) * 100
@@ -682,6 +698,11 @@ def main_app():
                     st.info(role_text)
 
                     st.subheader("📌 Required Skills")
+                    if use_expected_role_skills:
+                        st.info(
+                            "Using role expectations from the internal position profile because the job description text did not yield extractable skills."
+                        )
+
                     for skill in sorted(role_skills):
                         st.markdown(
                             f"""
