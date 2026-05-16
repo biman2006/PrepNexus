@@ -272,7 +272,7 @@ def load_vectorstore():
     embeddings = load_embeddings()
     return create_vectorestore(docs, embeddings)
 
-vectorstore = load_vectorstore()
+
 available_roles = sorted(list(role_skill_weights.keys()))
 
 # =====================================================
@@ -519,6 +519,9 @@ def main_app():
             if upload_file is None:
                 st.warning("Please upload your resume first.")
             else:
+
+                with st.spinner("Loading AI analysis engine..."):
+                   vectorstore=load_vectorstore()
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                     tmp_file.write(upload_file.read())
                     temp_pdf_path = tmp_file.name
