@@ -39,10 +39,32 @@ def generate_resume_pdf(
     # ==========================================
     doc = SimpleDocTemplate(
         output_path,
-        pagesize=letter
+        pagesize=letter,
+        leftMargin=36,
+        rightMargin=36,
+        topMargin=36,
+        bottomMargin=36
     )
 
     styles = getSampleStyleSheet()
+    body_style = ParagraphStyle(
+        "BodyStyle",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=11,
+        spaceAfter=4,
+        spaceBefore=0,
+    )
+    heading_style = ParagraphStyle(
+        "HeadingStyle",
+        parent=styles["Heading4"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        leading=12,
+        spaceAfter=6,
+        spaceBefore=6,
+    )
 
     story = []
 
@@ -60,50 +82,22 @@ def generate_resume_pdf(
 
         # Empty lines
         if not line:
-
-            story.append(
-                Spacer(1, 0.15 * inch)
-            )
-
+            story.append(Spacer(1, 0.08 * inch))
             continue
 
         # Headings
-        if (
-            line.isupper()
-            or line.endswith(":")
-        ):
-
-            story.append(
-                Paragraph(
-                    f"<b>{line}</b>",
-                    styles["Heading3"]
-                )
-            )
+        if line.isupper() or line.endswith(":"):
+            story.append(Paragraph(f"<b>{line}</b>", heading_style))
 
         # Bullet points
         elif line.startswith("-"):
-
-            story.append(
-                Paragraph(
-                    f"• {line[1:].strip()}",
-                    styles["BodyText"]
-                )
-            )
+            story.append(Paragraph(f"• {line[1:].strip()}", body_style))
 
         # Normal text
         else:
+            story.append(Paragraph(line, body_style))
 
-            story.append(
-                Paragraph(
-                    line,
-                    styles["BodyText"]
-                )
-            )
-
-        # Spacing
-        story.append(
-            Spacer(1, 0.1 * inch)
-        )
+        story.append(Spacer(1, 0.05 * inch))
 
     # ==========================================
     # BUILD PDF
