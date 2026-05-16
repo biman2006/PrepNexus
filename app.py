@@ -825,29 +825,34 @@ def main_app():
 
         if st.button("🚀 Generate Resume"):
             from utils.resume_api_builder import generate_resume
-            generated_resume = generate_resume(
-                name=name,
-                email=email,
-                phone=phone,
-                target_role=role,
-                skills=skills,
-                experience=experience,
-                projects=projects,
-                education=education
-            )
-
-            st.success("✅ Resume Generated Successfully")
-            st.text_area("Resume Preview", generated_resume, height=600)
-
-            pdf_path = generate_resume_pdf(generated_resume)
-
-            with open(pdf_path, "rb") as pdf_file:
-                st.download_button(
-                    label="📥 Download Resume PDF",
-                    data=pdf_file,
-                    file_name="PrepNexus_Resume.pdf",
-                    mime="application/pdf"
+            try:
+                generated_resume = generate_resume(
+                    name=name,
+                    email=email,
+                    phone=phone,
+                    target_role=role,
+                    skills=skills,
+                    experience=experience,
+                    projects=projects,
+                    education=education
                 )
+
+                st.success("✅ Resume Generated Successfully")
+                st.text_area("Resume Preview", generated_resume, height=600)
+
+                pdf_path = generate_resume_pdf(generated_resume)
+
+                with open(pdf_path, "rb") as pdf_file:
+                    st.download_button(
+                        label="📥 Download Resume PDF",
+                        data=pdf_file,
+                        file_name="PrepNexus_Resume.pdf",
+                        mime="application/pdf"
+                    )
+
+            except Exception as e:
+                st.error("Resume generation failed. Please check your input and try again.")
+                st.exception(e)
 
 # =====================================================
 # ROUTER
