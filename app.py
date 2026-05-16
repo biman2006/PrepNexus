@@ -272,11 +272,19 @@ def app_header():
 def load_vectorstore():
     embeddings = load_embeddings()
     index_dir = os.path.join(os.path.dirname(__file__), "rag", "job_index")
+    index_faiss = os.path.join(index_dir, "index.faiss")
+    index_pkl = os.path.join(index_dir, "index.pkl")
 
     if not os.path.exists(index_dir):
         raise FileNotFoundError(
             f"FAISS index directory not found: {index_dir}. "
             "Make sure rag/job_index is included in the deployed app."
+        )
+
+    if not os.path.exists(index_faiss) or not os.path.exists(index_pkl):
+        raise FileNotFoundError(
+            f"FAISS index files missing in {index_dir}. "
+            "Expected index.faiss and index.pkl to be present."
         )
 
     vectorestore = FAISS.load_local(
@@ -537,226 +545,207 @@ def main_app():
 
                 from rag.retriever import retrieve_role_info
 
-                try:
-                    with st.spinner("Loading AI analysis engine..."):
-                        vectorstore = load_vectorstore()
-                except Exception as e:
-                    st.error(
-                        "Failed to load the resume analysis engine. "
-                        "Please verify the deployed FAISS index files."
-                    )
-                    st.exception(e)
-                    st.stop()
-
+                temp_pdf_path = None
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                     tmp_file.write(upload_file.read())
                     temp_pdf_path = tmp_file.name
 
-                resume_text = extract_text_from_pdf(temp_pdf_path)
-                cleaned_resume = clean_text(resume_text)
-                resume_skills = set(normalize_skill(skill)
-                                    for skill in extract_skill(cleaned_resume,all_skills))
+                try:
+                    with st.spinner("Loading AI analysis engine..."):
+                        vectorstore = load_vectorstore()
 
-                retrieved_docs = retrieve_role_info(target_role, vectorstore)
-                role_text = retrieved_docs[0].page_content
-                role_skills = set(
-                   normalize_skill(skill) 
-                   for skill in extract_skill(role_text, all_skills))
+                    resume_text = extract_text_from_pdf(temp_pdf_path)
+                    cleaned_resume = clean_text(resume_text)
+                    resume_skills = set(normalize_skill(skill)
+                                        for skill in extract_skill(cleaned_resume, all_skills))
 
-                matched_skills = role_skills.intersection(resume_skills)
-                missing_skills = role_skills - resume_skills
+                    retrieved_docs = retrieve_role_info(target_role, vectorstore)
+                    if not retrieved_docs:
+                        st.error(
+                            "Could not find job role information for the selected target role. "
+                            "Please try a different role or contact support."
+                        )
+                        return
 
-                basic_match_score = (
-                    (len(matched_skills) / len(role_skills)) * 100
-                    if role_skills else 0
-                )
-
-                weighted_result = calculate_readiness(
-                    resume_skills,
-                    role_skill_weights[target_role]
-                )
-
-                readiness_score = weighted_result["readiness_score"]
-
-                st.success("✅ Resume Analysis Complete")
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("ATS Match Score", f"{basic_match_score:.2f}%")
-                with col2:
-                    st.metric("Career Readiness", f"{readiness_score:.2f}%")
-
-                st.subheader("📊 Performance Dashboard")
-                st.write("ATS Match score")
-                st.progress(int(basic_match_score))
-
-                st.write("Career Readiness Score")
-                st.progress(
-                    int(readiness_score)
-                )
-
-                st.subheader("📌 Missing Skills")
-
-                if missing_skills:
-                  for skill in sorted(missing_skills):
-                     st.markdown(
-            f"<div style='background:#fee2e2; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>❌ {display_skill(skill)}</div>",
-            unsafe_allow_html=True
-        )
-                else:
-                 st.success("No major skill gaps detected.")
-
-                 st.subheader("✅ Matched Skills")
-
-                if matched_skills:
-                  for skill in sorted(matched_skills):
-                    st.markdown(
-            f"<div style='background:#dcfce7; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>✔️ {display_skill(skill)}</div>",
-            unsafe_allow_html=True
-        )
-                else:
-                 st.warning("No matched skills detected.")
-
-                        
-# CAREER PREFERENCE
-# =====================================================
-
-                st.markdown("---")
-                st.subheader("🎯 Career Preference")
-                st.write(target_role)
-
-
-# =====================================================
-# ROLE DESCRIPTION
-# =====================================================
-                st.subheader("📘 Role Description")
-
-                st.markdown(f"""
-                <div style="
-                   background:#f8fafc;
-                   padding:25px;
-                   border-radius:18px;
-                   border-left:6px solid #2563eb;
-                   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-                   margin-bottom:20px;
-                   ">
-                <h3 style="
-                  color:#1e293b;
-                  font-weight:700;
-                  margin-bottom:15px;
-                  ">
-              🎯 {target_role.title()} Career Overview
-           </h3>
-       </div>
-        """, unsafe_allow_html=True)
-
-                st.info(role_text)
-
-
-# =====================================================
-# REQUIRED SKILLS
-# =====================================================
-
-                st.subheader("📌 Required Skills")
-
-                for skill in sorted(role_skills):
-                 st.markdown(
-        f"""
-        <div style="
-            background: rgba(59,130,246,0.12);
-            padding: 10px 14px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            color: #1e293b;
-            font-weight: 600;
-            border-left: 4px solid #3b82f6;
-        ">
-            🎯 {display_skill(skill)}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# =====================================================
-# CORE / SECONDARY / ADVANCED BREAKDOWN
-# =====================================================
-
-                st.markdown("---")
-                st.subheader("🚀 Advanced Skill Intelligence Dashboard")
-
-                col_core, col_secondary, col_advanced = st.columns(3)
-
-                with col_core:
-                 render_skill_category(
-                  "🧠 Core Skills",
-                  weighted_result["core_matched"],
-                  weighted_result["missing_core"],
-                  "#ef4444"
-                      )
-
-                with col_secondary:
-                 render_skill_category(
-                 "⚙️ Secondary Skills",
-                  weighted_result["secondary_matched"],
-                  weighted_result["missing_secondary"],
-                 "#8b5cf6"
-                     )
-
-                with col_advanced:
-                 render_skill_category(
-                  "🔬 Advanced Skills",
-                  weighted_result["advanced_matched"],
-                  weighted_result["missing_advanced"],
-                  "#10b981"
-                    )
-# =====================================================
-# STATUS
-# =====================================================
-
-                st.markdown("---")
-                st.subheader("📈 Candidate Status")
-
-                if readiness_score >= 85:
-                   st.success("Highly Job Ready")
-
-                elif readiness_score >= 70:
-                   st.info("Job Ready")
-
-                elif readiness_score >= 50:
-                  st.warning("Moderate Readiness")
-
-                else:
-                 st.error("Significant Skill Gap")
-
-
-# =====================================================
-# RECOMMENDATION
-# =====================================================
-
-                st.subheader("💡 Career Recommendation")
-
-                if readiness_score >= 85:
-                  st.success(
-                     "You are highly competitive. Focus on portfolio, projects, and interviews."
-                     )
-   
-                elif readiness_score >= 70:
-                 st.info(
-                    "You are job-ready. Strengthen secondary and advanced skills."
-                     )
-
-                elif readiness_score >= 50:
-                  st.warning(
-                    "Focus on missing core skills first."
+                    role_text = retrieved_docs[0].page_content
+                    role_skills = set(
+                        normalize_skill(skill)
+                        for skill in extract_skill(role_text, all_skills)
                     )
 
-                else:
-                  st.error(
-                     "Prioritize foundational skill development before applying aggressively."
-                      )
+                    if not role_skills:
+                        st.warning(
+                            "No skills could be extracted for this role description. "
+                            "The job role content may be missing or unsupported."
+                        )
+                        role_skills = set()
 
-                os.remove(temp_pdf_path)
+                    matched_skills = role_skills.intersection(resume_skills)
+                    missing_skills = role_skills - resume_skills
+
+                    basic_match_score = (
+                        (len(matched_skills) / len(role_skills)) * 100
+                        if role_skills else 0
+                    )
+
+                    weighted_result = calculate_readiness(
+                        resume_skills,
+                        role_skill_weights[target_role]
+                    )
+
+                    readiness_score = weighted_result["readiness_score"]
+
+                    st.success("✅ Resume Analysis Complete")
+
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("ATS Match Score", f"{basic_match_score:.2f}%")
+                    with col2:
+                        st.metric("Career Readiness", f"{readiness_score:.2f}%")
+
+                    st.subheader("📊 Performance Dashboard")
+                    st.write("ATS Match score")
+                    st.progress(int(basic_match_score))
+
+                    st.write("Career Readiness Score")
+                    st.progress(
+                        int(readiness_score)
+                    )
+
+                    st.subheader("📌 Missing Skills")
+
+                    if missing_skills:
+                        for skill in sorted(missing_skills):
+                            st.markdown(
+                                f"<div style='background:#fee2e2; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>❌ {display_skill(skill)}</div>",
+                                unsafe_allow_html=True
+                            )
+                    else:
+                        st.success("No major skill gaps detected.")
+
+                    st.subheader("✅ Matched Skills")
+
+                    if matched_skills:
+                        for skill in sorted(matched_skills):
+                            st.markdown(
+                                f"<div style='background:#dcfce7; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>✔️ {display_skill(skill)}</div>",
+                                unsafe_allow_html=True
+                            )
+                    else:
+                        st.warning("No matched skills detected.")
+
+                    # CAREER PREFERENCE
+                    st.markdown("---")
+                    st.subheader("🎯 Career Preference")
+                    st.write(target_role)
+
+                    # ROLE DESCRIPTION
+                    st.subheader("📘 Role Description")
+                    st.markdown(f"""
+                    <div style="
+                        background:#f8fafc;
+                        padding:25px;
+                        border-radius:18px;
+                        border-left:6px solid #2563eb;
+                        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+                        margin-bottom:20px;
+                        ">
+                        <h3 style="
+                            color:#1e293b;
+                            font-weight:700;
+                            margin-bottom:15px;
+                        ">
+                            🎯 {target_role.title()} Career Overview
+                        </h3>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.info(role_text)
+
+                    st.subheader("📌 Required Skills")
+                    for skill in sorted(role_skills):
+                        st.markdown(
+                            f"""
+                            <div style="
+                                background: rgba(59,130,246,0.12);
+                                padding: 10px 14px;
+                                border-radius: 10px;
+                                margin-bottom: 8px;
+                                color: #1e293b;
+                                font-weight: 600;
+                                border-left: 4px solid #3b82f6;
+                            ">
+                                🎯 {display_skill(skill)}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                    st.markdown("---")
+                    st.subheader("🚀 Advanced Skill Intelligence Dashboard")
+
+                    col_core, col_secondary, col_advanced = st.columns(3)
+                    with col_core:
+                        render_skill_category(
+                            "🧠 Core Skills",
+                            weighted_result["core_matched"],
+                            weighted_result["missing_core"],
+                            "#ef4444"
+                        )
+
+                    with col_secondary:
+                        render_skill_category(
+                            "⚙️ Secondary Skills",
+                            weighted_result["secondary_matched"],
+                            weighted_result["missing_secondary"],
+                            "#8b5cf6"
+                        )
+
+                    with col_advanced:
+                        render_skill_category(
+                            "🔬 Advanced Skills",
+                            weighted_result["advanced_matched"],
+                            weighted_result["missing_advanced"],
+                            "#10b981"
+                        )
+
+                    st.markdown("---")
+                    st.subheader("📈 Candidate Status")
+                    if readiness_score >= 85:
+                        st.success("Highly Job Ready")
+                    elif readiness_score >= 70:
+                        st.info("Job Ready")
+                    elif readiness_score >= 50:
+                        st.warning("Moderate Readiness")
+                    else:
+                        st.error("Significant Skill Gap")
+
+                    st.subheader("💡 Career Recommendation")
+                    if readiness_score >= 85:
+                        st.success(
+                            "You are highly competitive. Focus on portfolio, projects, and interviews."
+                        )
+                    elif readiness_score >= 70:
+                        st.info(
+                            "You are job-ready. Strengthen secondary and advanced skills."
+                        )
+                    elif readiness_score >= 50:
+                        st.warning(
+                            "Focus on missing core skills first."
+                        )
+                    else:
+                        st.error(
+                            "Prioritize foundational skill development before applying aggressively."
+                        )
+
+                except Exception as e:
+                    st.error(
+                        "Resume analysis failed. Please try again or contact support."
+                    )
+                    st.exception(e)
+
+                finally:
+                    if temp_pdf_path and os.path.exists(temp_pdf_path):
+                        os.remove(temp_pdf_path)
 
     # =====================================================
     # TAB 2
