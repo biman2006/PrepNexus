@@ -1,4 +1,4 @@
-# 🚀 PrepNus
+# 🚀 PrepNexus
 
 > **AI-Powered Career Intelligence Platform**
 > Transforming resume analysis, ATS optimization, skill-gap detection, and interview preparation into one unified ecosystem.
