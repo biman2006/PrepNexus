@@ -1,3 +1,4 @@
+import streamlit as st
 import string
 
 
@@ -9,7 +10,6 @@ SKILL_ALIASES = {
     "scikit learn": "scikit learn",
     "sklearn": "scikit learn",
     "scikit-learn": "scikit learn",
-    
 
     "machine learning": "machine learning",
     "ml": "machine learning",
@@ -71,14 +71,18 @@ def normalize_text(text):
     # Replace separators
     text = text.replace("-", " ").replace("_", " ")
 
-    # Alias replacements inside resume text
-    text = text.replace("sklearn", "scikit learn")
-    text = text.replace("powerbi", "power bi")
-    text = text.replace("node js", "nodejs")
-    text = text.replace("react js", "reactjs")
-    text = text.replace("js", "javascript")
-    text = text.replace("ml", "machine learning")
-    text = text.replace("dl", "deep learning")
+    # Alias replacements
+    replacements = {
+        "sklearn": "scikit learn",
+        "powerbi": "power bi",
+        "node js": "nodejs",
+        "react js": "reactjs",
+        " ml ": " machine learning ",
+        " dl ": " deep learning ",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
 
     # Remove punctuation
     text = text.translate(
@@ -104,37 +108,61 @@ def normalize_skill(skill):
         .strip()
     )
 
-    # Get the aliased version
-    aliased = SKILL_ALIASES.get(normalized, normalized)
-    
-    # Convert hyphens to spaces to match normalize_text output
-    aliased = aliased.replace("-", " ").strip()
-    
-    return aliased
+    # Alias standardization
+    aliased = SKILL_ALIASES.get(
+        normalized,
+        normalized
+    )
+
+    return aliased.replace("-", " ").strip()
+
+
+# =====================================================
+# PREPROCESS SKILL LIST
+# =====================================================
+@st.cache_data
+def preprocess_skill_list(skill_list):
+    """
+    Normalize + sort skills once for performance.
+    """
+
+    normalized_skills = list(
+        set(
+            normalize_skill(skill)
+            for skill in skill_list
+        )
+    )
+
+    return sorted(
+        normalized_skills,
+        key=len,
+        reverse=True
+    )
 
 
 # =====================================================
 # SKILL EXTRACTION
 # =====================================================
+@st.cache_data
 def extract_skill(text, skill_list):
     """
-    Extract matching skills from resume text
+    Extract matching skills from resume/job text
     using robust normalized matching.
     """
 
-    found_skills = []
+    found_skills = set()
 
-    # Normalize input text
+    # Normalize text
     normalized_text = normalize_text(text)
 
-    # Tokenize words
-    words = set(normalized_text.split())
+    # Tokenize
+    words = set(
+        normalized_text.split()
+    )
 
-    # Sort skills by length so longer skills match first
-    sorted_skills = sorted(
-        skill_list,
-        key=len,
-        reverse=True
+    # Preprocessed skills
+    sorted_skills = preprocess_skill_list(
+        tuple(skill_list)
     )
 
     # =================================================
@@ -142,21 +170,19 @@ def extract_skill(text, skill_list):
     # =================================================
     for skill in sorted_skills:
 
-        normalized_skill = normalize_skill(skill)
-
         # Multi-word skill
-        if " " in normalized_skill:
+        if " " in skill:
 
-            if normalized_skill in normalized_text:
-                found_skills.append(normalized_skill)
+            if skill in normalized_text:
+                found_skills.add(skill)
 
         # Single-word skill
         else:
 
-            if normalized_skill in words:
-                found_skills.append(normalized_skill)
+            if skill in words:
+                found_skills.add(skill)
 
     # =================================================
-    # REMOVE DUPLICATES
+    # RETURN CLEAN LIST
     # =================================================
-    return list(set(found_skills))
+    return list(found_skills)
