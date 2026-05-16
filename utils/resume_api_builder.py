@@ -1,11 +1,8 @@
 import os
+import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-
-# =====================================================
-# BASE DIRECTORY
-# =====================================================
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(
@@ -13,87 +10,28 @@ BASE_DIR = os.path.dirname(
     )
 )
 
-
-# =====================================================
-# LOAD .ENV
-# =====================================================
-
-env_path = os.path.join(
-    BASE_DIR,
-    ".env"
-)
-
-load_dotenv(
-    dotenv_path=env_path,
-    override=True
-)
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(dotenv_path=env_path, override=True)
 
 
-# =====================================================
-# FETCH GEMINI KEY
-# =====================================================
+@st.cache_resource
+def get_gemini_model():
+    api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 
-api_key = os.getenv(
-    "GEMINI_API_KEY"
-)
-
-
-# =====================================================
-# VALIDATE KEY
-# =====================================================
-
-if not api_key:
-    raise EnvironmentError(
-        f"GEMINI_API_KEY is not set. Checked path: {env_path}"
-    )
-
-
-# =====================================================
-# CONFIGURE GEMINI
-# =====================================================
-
-genai.configure(
-    api_key=api_key
-)
-
-
-# =====================================================
-# AUTO-DETECT WORKING MODEL
-# =====================================================
-
-available_models = []
-
-for m in genai.list_models():
-
-    if "generateContent" in m.supported_generation_methods:
-
-        available_models.append(
-            m.name
+    if not api_key:
+        raise EnvironmentError(
+            f"GEMINI_API_KEY is not set. Checked path: {env_path}"
         )
 
+    genai.configure(api_key=api_key)
 
-if not available_models:
-    raise RuntimeError(
-        "No Gemini models available for generateContent."
-    )
+    # Faster fixed model
+    MODEL_NAME = "gemini-1.5-flash"
 
+    model = genai.GenerativeModel(MODEL_NAME)
 
-# Select first working model
-MODEL_NAME = available_models[0]
+    return model
 
-
-# =====================================================
-# LOAD MODEL
-# =====================================================
-
-model = genai.GenerativeModel(
-    MODEL_NAME
-)
-
-
-# =====================================================
-# RESUME GENERATOR FUNCTION
-# =====================================================
 
 def generate_resume(
     name,
@@ -105,6 +43,7 @@ def generate_resume(
     projects,
     education
 ):
+    model = get_gemini_model()
 
     prompt = f"""
 Create a professional ATS-optimized resume for the following candidate.
@@ -171,10 +110,6 @@ ATS Keywords:
 Add relevant keywords for {target_role}.
 """
 
-    response = model.generate_content(
-        prompt
-    )
+    response = model.generate_content(prompt)
 
-    generated_resume = response.text
-
-    return generated_resume
+    return response.text
