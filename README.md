@@ -370,7 +370,7 @@ This project is licensed under the **MIT License**.
 # 👨‍💻 Author
 
 **Biman Adhikary**
-Founder of PrepNexu
+Founder of PrepNexus
 
 ---
 
