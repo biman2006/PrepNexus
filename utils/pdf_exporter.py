@@ -7,7 +7,7 @@ from reportlab.platypus import (
     Spacer
 )
 
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
 
