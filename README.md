@@ -74,17 +74,17 @@ PrepNexus is built to evolve beyond resume intelligence into a **full gamified i
 ---
 
 ## 📄 Resume Analyzer Dashboard
-![Resume Analyzer](assets/demo/resume_upload.png)
+![Resume Analyzer](assets/demo/Resume_upload.png)
 
 ---
 
 ## 📌 Skill Gap Detection System
-![Skills Analysis](assets/demo/skills_analysis.png)
+![Skills Analysis](assets/demo/skill_analysis.png)
 
 ---
 
 ## 🚀 Advanced Skill Intelligence Dashboard
-![Advanced Dashboard](assets/demo/advanced_dashboard.png)
+![Advanced Dashboard](assets/demo/advance_dashboard.png)
 
 ---
 
