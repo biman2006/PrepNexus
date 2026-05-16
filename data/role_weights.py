@@ -17,7 +17,7 @@ role_skill_weights = {
             "python", "machine learning", "statistics"
         ],
         "secondary": [
-            "pandas", "numpy", "scikit-learn", "data visualization"
+            "pandas", "numpy", "scikit learn", "data visualization"
         ],
         "advanced": [
             "deep learning", "tensorflow", "pytorch"
@@ -26,7 +26,7 @@ role_skill_weights = {
 
     "machine learning engineer": {
         "core": [
-            "python", "machine learning", "scikit-learn"
+            "python", "machine learning", "scikit learn"
         ],
         "secondary": [
             "tensorflow", "pytorch", "mlops"

@@ -50,9 +50,9 @@ docs = [
     # DATA SCIENCE / AI / MACHINE LEARNING
     # =====================================================
 
-    Document(page_content="Data Scientist requires Python, Machine Learning, Deep Learning, Statistics, Pandas, NumPy, Scikit-learn, Data Visualization"),
+    Document(page_content="Data Scientist requires Python, Machine Learning, Deep Learning, Statistics, Pandas, NumPy, Scikit learn, Data Visualization"),
 
-    Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, Scikit-learn, MLOps, Docker, Kubernetes"),
+    Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, Scikit learn, MLOps, Docker, Kubernetes"),
 
     Document(page_content="AI Engineer requires Python, Natural Language Processing, Computer Vision, Transformers, Large Language Models, LangChain, Retrieval-Augmented Generation, Fine-Tuning, Prompt Engineering"),
 

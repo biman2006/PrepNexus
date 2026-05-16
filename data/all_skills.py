@@ -287,7 +287,9 @@ skill_aliases = {
     "tf": "tensorflow",
     "hf": "hugging face",
     "pbi": "power bi",
-    "sklearn": "scikit-learn",
+    "sklearn": "scikit learn",
+    "scikit learn": "scikit learn",
+    "scikit-learn": "scikit learn",
     "gen ai": "generative ai",
     "llmops": "large language models"
 }

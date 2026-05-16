@@ -1,7 +1,9 @@
 import os
-import random
+import re
+import secrets
 import smtplib
 import socket
+import hashlib
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
@@ -54,11 +56,46 @@ def generate_otp():
     Generates a secure 6-digit OTP.
     """
 
-    return str(
-        random.randint(
-            100000,
-            999999
-        )
+    return str(secrets.randbelow(900000) + 100000)
+
+
+# =====================================================
+# PASSWORD HASHING
+# =====================================================
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    pwd_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        200000
+    )
+    return f"{salt}${pwd_hash.hex()}"
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    if not stored_hash or "$" not in stored_hash:
+        return False
+
+    salt, hash_hex = stored_hash.split("$", 1)
+    test_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        200000
+    ).hex()
+
+    return secrets.compare_digest(test_hash, hash_hex)
+
+
+def is_strong_password(password: str) -> bool:
+    if len(password) < 8:
+        return False
+    return bool(
+        re.search(r"[A-Z]", password)
+        and re.search(r"[a-z]", password)
+        and re.search(r"\d", password)
     )
 
 

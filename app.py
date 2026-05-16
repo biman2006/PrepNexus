@@ -11,7 +11,7 @@ from PIL import Image
 # =====================================================
 from utils.pdf_parser import extract_text_from_pdf
 from utils.text_cleaner import clean_text
-from utils.skill_extractor import extract_skill
+from utils.skill_extractor import extract_skill,normalize_skill
 from utils.readiness_scorer import calculate_readiness
 
 from rag.embedder import load_embeddings
@@ -24,7 +24,16 @@ from data.role_weights import role_skill_weights
 
 from utils.resume_api_builder import generate_resume
 from utils.pdf_exporter import generate_resume_pdf
-from utils.auth import generate_otp, send_otp_email
+from utils.auth import hash_password
+
+from database.crud import (
+    get_user_by_email,
+    register_user,
+    authenticate_user,
+    save_resume,
+    get_user_resumes
+)
+from database.init_db import initialize_database
 
 # =====================================================
 # PAGE CONFIG
@@ -82,22 +91,31 @@ def is_valid_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
+
+def is_valid_password(password):
+    if len(password) < 8:
+        return False
+    return bool(
+        re.search(r"[A-Z]", password)
+        and re.search(r"[a-z]", password)
+        and re.search(r"\d", password)
+    )
+
 # =====================================================
 # SESSION STATE INIT
 # =====================================================
 def init_session():
     defaults = {
         "logged_in": False,
-        "otp_sent": False,
-        "generated_otp": "",
         "user_email": "",
-        "otp_timestamp": 0,
+        "user_name": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
 init_session()
+initialize_database()
 
 # =====================================================
 # LOGIN PAGE
@@ -106,50 +124,129 @@ def login_page():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.image(logo, width=400)
-        st.markdown("# 🔐 Welcome to PrepNexus")
-        st.markdown("### AI-Powered Career Intelligence Platform")
-        st.markdown("Secure OTP-based login system")
+        st.image(
+            logo,
+            width=400
+        )
 
-        email = st.text_input("📧 Enter Your Email Address")
+        st.markdown(
+            "# 🔐 Welcome to PrepNexus"
+        )
 
-        if st.button("📩 Send OTP"):
+        st.markdown(
+            "### AI-Powered Career Intelligence Platform"
+        )
+
+        st.markdown(
+            "Secure password-based authentication system"
+        )
+
+        # =====================================================
+        # LOGIN OR CREATE ACCOUNT MODE
+        # =====================================================
+
+        auth_mode = st.radio(
+            "Select Mode",
+            [
+                "Login",
+                "Create Account"
+            ]
+        )
+
+        # =====================================================
+        # NAME FIELD FOR CREATE ACCOUNT
+        # =====================================================
+
+        name = ""
+
+        if auth_mode == "Create Account":
+            name = st.text_input(
+                "👤 Enter Your Full Name"
+            )
+
+        # =====================================================
+        # EMAIL FIELD
+        # =====================================================
+
+        email = st.text_input(
+            "📧 Enter Your Email Address"
+        )
+
+        # =====================================================
+        # AUTHENTICATION ACTION
+        # =====================================================
+
+        password = st.text_input(
+            "🔐 Password",
+            type="password"
+        )
+
+        confirm_password = ""
+        if auth_mode == "Create Account":
+            confirm_password = st.text_input(
+                "🔐 Confirm Password",
+                type="password"
+            )
+
+        st.markdown("---")
+        st.caption("Password must be at least 8 characters and include uppercase, lowercase, and digits.")
+
+        if st.button("✅ Continue"):
+            normalized_email = email.strip().lower()
+
             if not email:
-                st.warning("Please enter your email address")
+                st.warning("Please enter your email address.")
             elif not is_valid_email(email):
-                st.warning("Please enter a valid email")
+                st.warning("Please enter a valid email address.")
+            elif auth_mode == "Create Account" and not name:
+                st.warning("Please enter your full name.")
+            elif not password:
+                st.warning("Please enter your password.")
+            elif auth_mode == "Create Account" and password != confirm_password:
+                st.warning("Passwords do not match. Please confirm your password.")
+            elif auth_mode == "Create Account" and not is_valid_password(password):
+                st.warning("Choose a stronger password with uppercase, lowercase, and digits.")
             else:
-                otp = generate_otp()
-                success, message = send_otp_email(email, otp)
+                existing_user = get_user_by_email(normalized_email)
 
-                if success:
-                    st.session_state.generated_otp = otp
-                    st.session_state.user_email = email
-                    st.session_state.otp_sent = True
-                    st.session_state.otp_timestamp = time.time()
-                    st.success("✅ OTP sent successfully! Please check your inbox.")
-                else:
-                    st.error(f"❌ Failed to send OTP: {message}")
+                if auth_mode == "Create Account":
+                    if existing_user:
+                        st.warning("⚠️ Account already exists. Please login instead.")
+                    else:
+                        password_hash = hash_password(password)
+                        user = register_user(name, normalized_email, password_hash)
+                        if user:
+                            st.session_state.logged_in = True
+                            st.session_state.user_email = normalized_email
+                            st.session_state.user_name = name
+                            st.success("✅ Account created and logged in successfully.")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to create account. Please try again.")
 
-        # OTP Verification Section
-        if st.session_state.otp_sent:
-            st.markdown("---")
-            user_otp = st.text_input("🔑 Enter OTP", max_chars=6)
+                elif auth_mode == "Login":
+                    if not existing_user:
+                        st.warning("⚠️ Account not found. Please create an account first.")
+                    else:
+                        if not existing_user.password_hash and existing_user.otp:
+                            st.warning(
+                                "This account was created with legacy OTP login. "
+                                "Enter the OTP sent to your email as a temporary password to migrate your account."
+                            )
 
-            if st.button("✅ Verify OTP"):
-                # OTP expiry: 5 minutes
-                if time.time() - st.session_state.otp_timestamp > 300:
-                    st.error("⏰ OTP expired. Please request a new one.")
-                    st.session_state.otp_sent = False
-                    st.session_state.generated_otp = ""
+                        user = authenticate_user(normalized_email, password)
+                        if user:
+                            st.session_state.logged_in = True
+                            st.session_state.user_email = normalized_email
+                            st.session_state.user_name = user.name or ""
+                            st.success("🎉 Login successful!")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("❌ Invalid credentials. Please try again.")
 
-                elif user_otp == st.session_state.generated_otp:
-                    st.session_state.logged_in = True
-                    st.success("🎉 Login successful!")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("❌ Invalid OTP. Please try again.")
+    st.stop()
 
     st.stop()
 
@@ -184,16 +281,215 @@ available_roles = sorted(list(role_skill_weights.keys()))
 def sidebar():
     st.sidebar.image(logo, width=220)
     st.sidebar.markdown("## 🚀 PrepNexus")
-    st.sidebar.markdown(f"### 👤 {st.session_state.user_email}")
+    st.sidebar.markdown(f"### 👤 {st.session_state.user_name or st.session_state.user_email}")
 
     if st.sidebar.button("🚪 Logout"):
-        for key in ["logged_in", "otp_sent", "generated_otp", "user_email"]:
-            st.session_state[key] = False if key in ["logged_in", "otp_sent"] else ""
+        for key in ["logged_in", "user_email", "user_name"]:
+            st.session_state[key] = False if key == "logged_in" else ""
         st.rerun()
 
 # =====================================================
 # MAIN APP
 # =====================================================
+def render_skill_category(title, matched, missing, color):
+    total = len(matched) + len(missing)
+    progress = int((len(matched) / total) * 100) if total > 0 else 0
+
+    # --------------------
+    st.markdown(f"""
+    <div style="
+        background:#ffffff;
+        padding:25px;
+        border-radius:18px;
+        border-top:5px solid {color};
+        box-shadow:0 8px 24px rgba(0,0,0,0.15);
+        margin-bottom:15px;
+    ">
+        <h2 style="
+            color:#1e293b;
+            font-size:30px;
+            font-weight:800;
+            margin:0;
+        ">
+            {title}
+        </h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Progress
+    st.metric("Completion", f"{progress}%")
+    st.progress(progress)
+
+    # Matched Skills
+    st.markdown("### ✅ Matched Skills")
+    if matched:
+        for skill in sorted(matched):
+            st.markdown(
+                f"""
+                <div style="
+                    background:#dcfce7;
+                    padding:10px;
+                    border-radius:8px;
+                    margin-bottom:6px;
+                    color:#166534;
+                    font-weight:600;
+                ">
+                    ✔️ {display_skill(skill)}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.info("No matched skills yet.")
+
+    # Missing Skills
+    st.markdown("### ❌ Missing Skills")
+    if missing:
+        for skill in sorted(missing):
+            st.markdown(
+                f"""
+                <div style="
+                    background:#fee2e2;
+                    padding:10px;
+                    border-radius:8px;
+                    margin-bottom:6px;
+                    color:#991b1b;
+                    font-weight:600;
+                ">
+                    ❌ {display_skill(skill)}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.success("All skills covered!")
+
+def display_skill(skill):
+    """
+    Convert normalized backend skill names into polished,
+    recruiter-friendly production UI labels.
+    """
+
+    skill = skill.strip().lower()
+
+    display_map = {
+        # =====================================================
+        # DATA SCIENCE / MACHINE LEARNING
+        # =====================================================
+        "scikit learn": "Scikit-Learn",
+        "machine learning": "Machine Learning",
+        "deep learning": "Deep Learning",
+        "data science": "Data Science",
+        "data analysis": "Data Analysis",
+        "data visualization": "Data Visualization",
+        "statistics": "Statistics",
+        "power bi": "Power BI",
+        "tableau": "Tableau",
+        "excel": "Excel",
+        "sql": "SQL",
+        "mysql": "MySQL",
+        "postgresql": "PostgreSQL",
+        "mongodb": "MongoDB",
+
+        # Libraries / Frameworks
+        "numpy": "NumPy",
+        "pandas": "Pandas",
+        "matplotlib": "Matplotlib",
+        "seaborn": "Seaborn",
+        "tensorflow": "TensorFlow",
+        "pytorch": "PyTorch",
+        "keras": "Keras",
+        "opencv": "OpenCV",
+        "xgboost": "XGBoost",
+        "lightgbm": "LightGBM",
+
+        # =====================================================
+        # PROGRAMMING LANGUAGES
+        # =====================================================
+        "python": "Python",
+        "java": "Java",
+        "javascript": "JavaScript",
+        "typescript": "TypeScript",
+        "c": "C",
+        "c++": "C++",
+        "c#": "C#",
+        "r": "R",
+        "go": "Go",
+        "php": "PHP",
+        "swift": "Swift",
+        "kotlin": "Kotlin",
+
+        # =====================================================
+        # WEB DEVELOPMENT
+        # =====================================================
+        "html": "HTML",
+        "css": "CSS",
+        "react": "React",
+        "reactjs": "React.js",
+        "nextjs": "Next.js",
+        "nodejs": "Node.js",
+        "expressjs": "Express.js",
+        "fastapi": "FastAPI",
+        "flask": "Flask",
+        "django": "Django",
+        "streamlit": "Streamlit",
+        "bootstrap": "Bootstrap",
+        "tailwind css": "Tailwind CSS",
+
+        # =====================================================
+        # CLOUD / DEVOPS
+        # =====================================================
+        "amazon web services": "AWS",
+        "aws": "AWS",
+        "google cloud platform": "GCP",
+        "gcp": "GCP",
+        "microsoft azure": "Azure",
+        "azure": "Azure",
+        "docker": "Docker",
+        "kubernetes": "Kubernetes",
+        "jenkins": "Jenkins",
+        "terraform": "Terraform",
+        "git": "Git",
+        "github": "GitHub",
+        "gitlab": "GitLab",
+        "ci cd": "CI/CD",
+
+        # =====================================================
+        # SECURITY / AUTH
+        # =====================================================
+        "jwt": "JWT",
+        "oauth": "OAuth",
+        "rest api": "REST API",
+        "graphql": "GraphQL",
+
+        # =====================================================
+        # BUSINESS / PRODUCTIVITY
+        # =====================================================
+        "project management": "Project Management",
+        "business analysis": "Business Analysis",
+        "product management": "Product Management",
+
+        # =====================================================
+        # GENERIC
+        # =====================================================
+        "ai": "AI",
+        "nlp": "NLP",
+        "computer vision": "Computer Vision",
+        "llm": "LLM",
+        "rag": "RAG",
+    }
+
+    # Return mapped professional label
+    if skill in display_map:
+        return display_map[skill]
+
+    # Default fallback formatting
+    return " ".join(word.capitalize() for word in skill.split())
+
+
+
+
+
 def main_app():
     app_header()
     sidebar()
@@ -229,11 +525,14 @@ def main_app():
 
                 resume_text = extract_text_from_pdf(temp_pdf_path)
                 cleaned_resume = clean_text(resume_text)
-                resume_skills = set(extract_skill(cleaned_resume, all_skills))
+                resume_skills = set(normalize_skill(skill)
+                                    for skill in extract_skill(cleaned_resume,all_skills))
 
                 retrieved_docs = retrieve_role_info(target_role, vectorstore)
                 role_text = retrieved_docs[0].page_content
-                role_skills = set(extract_skill(role_text, all_skills))
+                role_skills = set(
+                   normalize_skill(skill) 
+                   for skill in extract_skill(role_text, all_skills))
 
                 matched_skills = role_skills.intersection(resume_skills)
                 missing_skills = role_skills - resume_skills
@@ -268,12 +567,28 @@ def main_app():
                 )
 
                 st.subheader("📌 Missing Skills")
-                st.write(sorted(missing_skills))
 
-                st.subheader("✅ Matched Skills")
-                st.write(sorted(matched_skills))
+                if missing_skills:
+                  for skill in sorted(missing_skills):
+                     st.markdown(
+            f"<div style='background:#fee2e2; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>❌ {display_skill(skill)}</div>",
+            unsafe_allow_html=True
+        )
+                else:
+                 st.success("No major skill gaps detected.")
 
-                           # =====================================================
+                 st.subheader("✅ Matched Skills")
+
+                if matched_skills:
+                  for skill in sorted(matched_skills):
+                    st.markdown(
+            f"<div style='background:#dcfce7; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>✔️ {display_skill(skill)}</div>",
+            unsafe_allow_html=True
+        )
+                else:
+                 st.warning("No matched skills detected.")
+
+                        
 # CAREER PREFERENCE
 # =====================================================
 
@@ -285,9 +600,28 @@ def main_app():
 # =====================================================
 # ROLE DESCRIPTION
 # =====================================================
-
                 st.subheader("📘 Role Description")
-                st.write(role_text)
+
+                st.markdown(f"""
+                <div style="
+                   background:#f8fafc;
+                   padding:25px;
+                   border-radius:18px;
+                   border-left:6px solid #2563eb;
+                   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+                   margin-bottom:20px;
+                   ">
+                <h3 style="
+                  color:#1e293b;
+                  font-weight:700;
+                  margin-bottom:15px;
+                  ">
+              🎯 {target_role.title()} Career Overview
+           </h3>
+       </div>
+        """, unsafe_allow_html=True)
+
+                st.info(role_text)
 
 
 # =====================================================
@@ -295,7 +629,24 @@ def main_app():
 # =====================================================
 
                 st.subheader("📌 Required Skills")
-                st.write(sorted(role_skills))
+
+                for skill in sorted(role_skills):
+                 st.markdown(
+        f"""
+        <div style="
+            background: rgba(59,130,246,0.12);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            border-left: 4px solid #3b82f6;
+        ">
+            🎯 {display_skill(skill)}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # =====================================================
@@ -303,26 +654,33 @@ def main_app():
 # =====================================================
 
                 st.markdown("---")
-                st.subheader("🚀 Advanced Skill Breakdown")
+                st.subheader("🚀 Advanced Skill Intelligence Dashboard")
 
                 col_core, col_secondary, col_advanced = st.columns(3)
 
                 with col_core:
-                  st.markdown("### 🧠 Core Skills")
-                  st.write("Matched:", sorted(weighted_result["core_matched"]))
-                  st.write("Missing:", sorted(weighted_result["missing_core"]))
+                 render_skill_category(
+                  "🧠 Core Skills",
+                  weighted_result["core_matched"],
+                  weighted_result["missing_core"],
+                  "#ef4444"
+                      )
 
                 with col_secondary:
-                  st.markdown("### ⚙️ Secondary Skills")
-                  st.write("Matched:", sorted(weighted_result["secondary_matched"]))
-                  st.write("Missing:", sorted(weighted_result["missing_secondary"]))
+                 render_skill_category(
+                 "⚙️ Secondary Skills",
+                  weighted_result["secondary_matched"],
+                  weighted_result["missing_secondary"],
+                 "#8b5cf6"
+                     )
 
                 with col_advanced:
-                  st.markdown("### 🔬 Advanced Skills")
-                  st.write("Matched:", sorted(weighted_result["advanced_matched"]))
-                  st.write("Missing:", sorted(weighted_result["missing_advanced"]))
-
-
+                 render_skill_category(
+                  "🔬 Advanced Skills",
+                  weighted_result["advanced_matched"],
+                  weighted_result["missing_advanced"],
+                  "#10b981"
+                    )
 # =====================================================
 # STATUS
 # =====================================================
