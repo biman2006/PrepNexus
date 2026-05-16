@@ -1,10 +1,17 @@
-from PyPDF2 import PdfReader 
+import streamlit as st
+from PyPDF2 import PdfReader
 
+
+@st.cache_data
 def extract_text_from_pdf(file_path):
-    reader=PdfReader(file_path)
-    text=""
+    reader = PdfReader(file_path)
+
+    text = ""
 
     for page in reader.pages:
-        text+=page.extract_text()
+        extracted = page.extract_text()
 
-    return text 
+        if extracted:
+            text += extracted
+
+    return text
