@@ -131,6 +131,8 @@ User Receives:
 - Career Recommendations
 - ATS Resume PDF
 
+-----
+
 # 🛠️ Tech Stack
 
 ## Frontend
