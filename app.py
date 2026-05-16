@@ -5,7 +5,23 @@ import os
 import re
 import time
 from PIL import Image
-from langchain_community.vectorstores import FAISS
+import importlib
+
+
+def _import_faiss():
+    """Dynamically import FAISS from the available langchain package.
+    Tries `langchain_community.vectorstores` first, then `langchain.vectorstores`.
+    """
+    for mod_name in ("langchain_community.vectorstores", "langchain.vectorstores"):
+        try:
+            mod = importlib.import_module(mod_name)
+            return getattr(mod, "FAISS")
+        except Exception:
+            continue
+    raise ImportError("Could not import FAISS from langchain packages. Install langchain-community or langchain.")
+
+
+FAISS = _import_faiss()
 
 # =====================================================
 # BACKEND IMPORTS
