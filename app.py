@@ -731,22 +731,14 @@ def main_app():
                         )
 
                     for skill in sorted(role_skills):
-                        st.markdown(
-                            f"""
-                            <div style="
-                                background: rgba(59,130,246,0.12);
-                                padding: 10px 14px;
-                                border-radius: 10px;
-                                margin-bottom: 8px;
-                                color: #1e293b;
-                                font-weight: 600;
-                                border-left: 4px solid #3b82f6;
-                            ">
-                                🎯 {display_skill(skill)}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                       st.markdown(
+                           f"""
+                           <div class="skill-card">
+                               <div class="skill-name">🎯 {display_skill(skill)}</div>
+                          </div>
+                        """,
+                       unsafe_allow_html=True
+    )
 
                     st.markdown("---")
                     st.subheader("🚀 Advanced Skill Intelligence Dashboard")
