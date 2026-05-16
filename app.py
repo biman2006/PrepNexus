@@ -98,6 +98,33 @@ h1, h2, h3 {
     padding: 20px;
     border-radius: 16px;
 }
+            .skill-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #0f172a, #0b2c66);
+    padding: 18px 24px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+
+.skill-name {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.skill-score {
+    background-color: #2563eb;
+    color: white;
+    padding: 6px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+}
 </style>
 """, unsafe_allow_html=True)
 
