@@ -592,9 +592,13 @@ def main_app():
                     if not role_skills:
                         st.warning(
                             "No skills could be extracted for this role description. "
-                            "The job role content may be missing or unsupported."
+                            "Using the expected skills defined for the selected role instead."
                         )
-                        role_skills = set()
+                        role_skills = set(
+                            normalize_skill(skill)
+                            for section in role_skill_weights[target_role].values()
+                            for skill in section
+                        )
 
                     matched_skills = role_skills.intersection(resume_skills)
                     missing_skills = role_skills - resume_skills
