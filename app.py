@@ -331,6 +331,7 @@ def load_vectorstore():
                 "Could not load FAISS index locally; falling back to internal role profiles."
             )
             st.exception(exc)
+            return None
 
     if not os.path.exists(index_dir):
         st.warning(

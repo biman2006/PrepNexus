@@ -38,6 +38,12 @@ class LocalSentenceTransformerEmbeddings(Embeddings):
     def embed_query(self, text):
         return self.model.encode(text, convert_to_numpy=True)
 
+    async def aembed_documents(self, texts):
+        return self.embed_documents(texts)
+
+    async def aembed_query(self, text):
+        return self.embed_query(text)
+
     def __call__(self, texts):
         if isinstance(texts, str):
             return self.embed_query(texts)
@@ -48,18 +54,18 @@ class LocalSentenceTransformerEmbeddings(Embeddings):
 
 @st.cache_resource
 def load_embeddings():
-    if SentenceTransformer is not None:
-        try:
-            return LocalSentenceTransformerEmbeddings(
-                "sentence-transformers/all-MiniLM-L6-v2"
-            )
-        except Exception:
-            pass
-
     if HuggingFaceEmbeddings is not None:
         try:
             return HuggingFaceEmbeddings(
                 model_name="sentence-transformers/all-MiniLM-L6-v2"
+            )
+        except Exception:
+            pass
+
+    if SentenceTransformer is not None:
+        try:
+            return LocalSentenceTransformerEmbeddings(
+                "sentence-transformers/all-MiniLM-L6-v2"
             )
         except Exception:
             pass
