@@ -32,6 +32,13 @@ class LocalSentenceTransformerEmbeddings:
     def embed_query(self, text):
         return self.model.encode(text, convert_to_numpy=True)
 
+    def __call__(self, texts):
+        if isinstance(texts, str):
+            return self.embed_query(texts)
+        if isinstance(texts, (list, tuple)):
+            return self.embed_documents(texts)
+        return self.embed_query(texts)
+
 
 @st.cache_resource
 def load_embeddings():
