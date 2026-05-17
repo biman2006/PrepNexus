@@ -1,24 +1,30 @@
+import importlib
 import streamlit as st
 
-try:
-    from langchain_huggingface import HuggingFaceEmbeddings
-except ImportError:
-    HuggingFaceEmbeddings = None
-
-try:
-    from langchain_community.embeddings import HuggingFaceEmbeddings as CommunityHuggingFaceEmbeddings
-    if HuggingFaceEmbeddings is None:
-        HuggingFaceEmbeddings = CommunityHuggingFaceEmbeddings
-except ImportError:
-    pass
+HuggingFaceEmbeddings = None
+for module_name, class_name in [
+    ("langchain_huggingface", "HuggingFaceEmbeddings"),
+    ("langchain_community.embeddings", "HuggingFaceEmbeddings")
+]:
+    try:
+        module = importlib.import_module(module_name)
+        HuggingFaceEmbeddings = getattr(module, class_name)
+        break
+    except Exception:
+        continue
 
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
     SentenceTransformer = None
 
+try:
+    from langchain_core.embeddings import Embeddings
+except ImportError:
+    Embeddings = object
 
-class LocalSentenceTransformerEmbeddings:
+
+class LocalSentenceTransformerEmbeddings(Embeddings):
     def __init__(self, model_name: str):
         if SentenceTransformer is None:
             raise ImportError(
