@@ -318,25 +318,56 @@ def load_vectorstore():
     index_faiss = os.path.join(index_dir, "index.faiss")
     index_pkl = os.path.join(index_dir, "index.pkl")
 
+    if os.path.exists(index_dir) and os.path.exists(index_faiss) and os.path.exists(index_pkl):
+        try:
+            vectorestore = FAISS.load_local(
+                index_dir,
+                embeddings,
+                allow_dangerous_deserialization=True
+            )
+            return vectorestore
+        except Exception as exc:
+            st.warning(
+                "Could not load FAISS index locally; falling back to internal role profiles."
+            )
+            st.exception(exc)
+
     if not os.path.exists(index_dir):
-        raise FileNotFoundError(
-            f"FAISS index directory not found: {index_dir}. "
-            "Make sure rag/job_index is included in the deployed app."
+        st.warning(
+            f"FAISS index directory not found: {index_dir}. Using fallback role matching instead."
         )
+    else:
+        missing_files = []
+        if not os.path.exists(index_faiss):
+            missing_files.append("index.faiss")
+        if not os.path.exists(index_pkl):
+            missing_files.append("index.pkl")
+        if missing_files:
+            st.warning(
+                f"FAISS index files missing: {', '.join(missing_files)}. Using fallback role matching instead."
+            )
 
-    if not os.path.exists(index_faiss) or not os.path.exists(index_pkl):
-        raise FileNotFoundError(
-            f"FAISS index files missing in {index_dir}. "
-            "Expected index.faiss and index.pkl to be present."
-        )
+    return None
 
-    vectorestore = FAISS.load_local(
-        index_dir,
-        embeddings,
-        allow_dangerous_deserialization=True
-    )
 
-    return vectorestore
+def get_role_profile_text(role):
+    role_data = role_skill_weights.get(role)
+    if not role_data:
+        return f"{role.title()} role description is not available."
+
+    core = ", ".join(role_data.get("core", []))
+    secondary = ", ".join(role_data.get("secondary", []))
+    advanced = ", ".join(role_data.get("advanced", []))
+
+    description_parts = []
+    if core:
+        description_parts.append(f"Core skills: {core}")
+    if secondary:
+        description_parts.append(f"Secondary skills: {secondary}")
+    if advanced:
+        description_parts.append(f"Advanced skills: {advanced}")
+
+    return f"{role.title()} requires {core}. " + " ".join(description_parts)
 
 
 available_roles = sorted(list(role_skill_weights.keys()))
@@ -615,15 +646,22 @@ def main_app():
                     resume_skills = set(normalize_skill(skill)
                                         for skill in extract_skill(cleaned_resume, all_skills))
 
-                    retrieved_docs = retrieve_role_info(target_role, vectorstore)
-                    if not retrieved_docs:
-                        st.error(
-                            "Could not find job role information for the selected target role. "
-                            "Please try a different role or contact support."
+                    if vectorstore is not None:
+                        retrieved_docs = retrieve_role_info(target_role, vectorstore)
+                        if retrieved_docs:
+                            role_text = retrieved_docs[0].page_content
+                        else:
+                            role_text = get_role_profile_text(target_role)
+                            st.warning(
+                                "Could not retrieve a role document from the vector database. "
+                                "Using internal role profile fallback."
+                            )
+                    else:
+                        role_text = get_role_profile_text(target_role)
+                        st.info(
+                            "Using internal role profile fallback for resume analysis."
                         )
-                        return
 
-                    role_text = retrieved_docs[0].page_content
                     extracted_role_skills = set(
                         normalize_skill(skill)
                         for skill in extract_skill(role_text, all_skills)
