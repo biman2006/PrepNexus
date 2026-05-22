@@ -2,7 +2,13 @@
 
 # Production-Grade `job_roles.py` for PrepNus
 
-from langchain_core.documents import Document
+try:
+    from langchain_core.documents import Document
+except ImportError:
+    class Document:
+        def __init__(self, page_content="", metadata=None):
+            self.page_content = page_content
+            self.metadata = metadata or {}
 
 docs = [
 
@@ -50,9 +56,9 @@ docs = [
     # DATA SCIENCE / AI / MACHINE LEARNING
     # =====================================================
 
-    Document(page_content="Data Scientist requires Python, Machine Learning, Deep Learning, Statistics, Pandas, NumPy, Scikit learn, Data Visualization"),
+    Document(page_content="Data Scientist requires Python, Machine Learning, Deep Learning, Statistics, Pandas, NumPy, scikit learn, Data Visualization"),
 
-    Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, Scikit learn, MLOps, Docker, Kubernetes"),
+    Document(page_content="Machine Learning Engineer requires Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, scikit learn, MLOps, Docker, Kubernetes"),
 
     Document(page_content="AI Engineer requires Python, Natural Language Processing, Computer Vision, Transformers, Large Language Models, LangChain, Retrieval-Augmented Generation, Fine-Tuning, Prompt Engineering"),
 

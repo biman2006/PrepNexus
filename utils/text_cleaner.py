@@ -5,39 +5,42 @@ try:
     import nltk
     from nltk.corpus import stopwords
     from nltk.tokenize import word_tokenize
-except ImportError as exc:
-    raise ImportError(
-        "NLTK is required for text cleaning. Install it with: pip install nltk"
-    ) from exc
+except ImportError:
+    nltk = None
+    stopwords = None
+    word_tokenize = None
 
 
 # =====================================================
 # ENSURE REQUIRED NLTK DATA
 # =====================================================
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
+if nltk is not None:
     try:
-        nltk.download("punkt", quiet=True)
-    except Exception:
-        # If downloader is unavailable (deployed env), continue and use fallback tokenizer
-        pass
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        try:
+            nltk.download("punkt", quiet=True)
+        except Exception:
+            pass
 
-try:
-    nltk.data.find("corpora/stopwords")
-except LookupError:
     try:
-        nltk.download("stopwords", quiet=True)
-    except Exception:
-        pass
+        nltk.data.find("corpora/stopwords")
+    except LookupError:
+        try:
+            nltk.download("stopwords", quiet=True)
+        except Exception:
+            pass
 
 
 # =====================================================
 # STOPWORDS
 # =====================================================
-try:
-    stop_words = set(stopwords.words("english"))
-except Exception:
+if stopwords is not None:
+    try:
+        stop_words = set(stopwords.words("english"))
+    except Exception:
+        stop_words = set()
+else:
     stop_words = set()
 
 

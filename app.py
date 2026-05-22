@@ -18,10 +18,12 @@ def _import_faiss():
             return getattr(mod, "FAISS")
         except Exception:
             continue
-    raise ImportError("Could not import FAISS from langchain packages. Install langchain-community or langchain.")
+    return None
 
 
 FAISS = _import_faiss()
+if FAISS is None:
+    print("Warning: Could not import FAISS from langchain packages. Install langchain-community or langchain.")
 
 # =====================================================
 # BACKEND IMPORTS
@@ -52,7 +54,31 @@ from database.crud import (
 )
 from database.init_db import initialize_database
 
-from recomendation.recomendation_engine import (RecomendationEngine)
+print("START")
+
+try:
+    from recomendation.youtube_service import YoutubeService
+    print("YoutubeService OK")
+except Exception as e:
+    print("YoutubeService ERROR:", e)
+
+try:
+    from recomendation.course_service import CourseService
+    print("CourseService OK")
+except Exception as e:
+    print("CourseService ERROR:", e)
+
+try:
+    from recomendation.roadmap_service import RoadmapService
+    print("RoadmapService OK")
+except Exception as e:
+    print("RoadmapService ERROR:", e)
+
+try:
+    from recomendation.recomendation_engine import RecomendationEngine
+    print("RecomendationEngine OK")
+except Exception as e:
+    print("RecomendationEngine ERROR:", e)
 from utils.gemini_config import (gemini_model)
 
 
@@ -317,6 +343,12 @@ def app_header():
 @st.cache_resource
 
 def load_vectorstore():
+    if FAISS is None:
+        st.warning(
+            "FAISS is not available in this environment; using fallback role matching instead."
+        )
+        return None
+
     embeddings = load_embeddings()
     index_dir = os.path.join(os.path.dirname(__file__), "rag", "job_index")
     index_faiss = os.path.join(index_dir, "index.faiss")
@@ -728,51 +760,62 @@ def main_app():
                             )
 
 
-                            # AI Learning Recomendations
+                        st.markdown("---")
+                        st.subheader("AI Learning Recomendations")
 
+                        if gemini_model is not None:
+                            engine = RecomendationEngine(gemini_model)
+                            try:
+                                recomendations = engine.generate_recomendations(missing_skills)
+                            except Exception as exc:
+                                st.warning(
+                                    "AI recommendations failed. Showing available skill insights only."
+                                )
+                                print(f"Recommendation engine error: {exc}")
+                                recomendations = {
+                                    skill: {"videos": [], "courses": [], "roadmap": "AI recommendations unavailable."}
+                                    for skill in missing_skills
+                                }
 
-                            st.markdown("---")
-                            st.subheader("AI Learning Recomendations")
+                            quota_warning = None
+                            for skill, data in recomendations.items():
+                                if data.get("warning"):
+                                    quota_warning = data.get("warning")
 
-                            recomendations=(RecomendationEngine.generate_recomendations(missing_skills))
+                            if quota_warning:
+                                st.warning(quota_warning)
 
-                            for skill,data in recomendations.items():
+                            for skill, data in recomendations.items():
                                 st.markdown("---")
-
                                 st.subheader(f"Learn {display_skill(skill)}")
 
-
-                                #Youtube Videos
-
                                 st.markdown("### Recomended Video & Playlists")
+                                if data.get("videos"):
+                                    for video in data["videos"]:
+                                        st.markdown(f"- [{video.title}]({video.url})")
+                                else:
+                                    st.write("No video recommendations available.")
 
-                                for video in data["videos"]:
-                                    st.markdown(f"- [{video.title}]({video.url})")
+                                st.markdown("### Recomended Courses")
+                                if data.get("courses"):
+                                    for course in data["courses"]:
+                                        st.markdown(f"[Open Courses]({course['url']})")
+                                        st.caption(course["content"])
+                                else:
+                                    st.write("No course recommendations available.")
 
-
-                                #Courses 
-
-                                st.markdown("###Recomended Courses")
-
-                                for course in data["courses"]:
-                                    st.markdown(f"[Open Courses]({course['url']})")
-
-                                    st.caption(course["content"])
-
-
-                                    #Roadmap
-
-                                    st.markdown("### Learning Roadmap")
-
-                                    roadmap_steps=(
-                                        data["roadmap"].split("\n")
-                                    )
-
+                                st.markdown("### Learning Roadmap")
+                                roadmap_steps = data.get("roadmap", "").split("\n") if isinstance(data.get("roadmap"), str) else []
+                                if roadmap_steps:
                                     for step in roadmap_steps:
-
                                         if step.strip():
                                             st.markdown(f"- {step}")
-                                            
+                                else:
+                                    st.write("No roadmap available.")
+                        else:
+                            st.warning(
+                                "AI recommendations are unavailable because Gemini is not configured or the required package is missing."
+                            )
                             
 
 

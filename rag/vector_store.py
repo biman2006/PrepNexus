@@ -1,5 +1,7 @@
 import importlib
 
+from rag.embedder import load_embeddings
+
 
 def _import_faiss():
     for mod_name in ("langchain_community.vectorstores", "langchain.vectorstores"):
@@ -8,14 +10,16 @@ def _import_faiss():
             return getattr(mod, "FAISS")
         except Exception:
             continue
-    raise ImportError("Could not import FAISS from langchain packages. Install langchain-community or langchain.")
-
-
-FAISS = _import_faiss()
-from rag.embedder import load_embeddings
+    return None
 
 
 def create_vectorestore(documents, embedings):
+    FAISS = _import_faiss()
+    if FAISS is None:
+        raise ImportError(
+            "Could not import FAISS from langchain packages. Install langchain-community or langchain."
+        )
+
     vectorstore = FAISS.from_documents(
         documents,
         embedings
