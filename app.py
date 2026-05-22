@@ -52,6 +52,10 @@ from database.crud import (
 )
 from database.init_db import initialize_database
 
+from recomendation.recomendation_engine import (RecomendationEngine)
+from utils.gemini_config import (gemini_model)
+
+
 # =====================================================
 # PAGE CONFIG
 # =====================================================
@@ -722,6 +726,57 @@ def main_app():
                                 f"<div style='background:#fee2e2; padding:10px; border-radius:8px; margin-bottom:6px; color:black;'>❌ {display_skill(skill)}</div>",
                                 unsafe_allow_html=True
                             )
+
+
+                            # AI Learning Recomendations
+
+
+                            st.markdown("---")
+                            st.subheader("AI Learning Recomendations")
+
+                            recomendations=(RecomendationEngine.generate_recomendations(missing_skills))
+
+                            for skill,data in recomendations.items():
+                                st.markdown("---")
+
+                                st.subheader(f"Learn {display_skill(skill)}")
+
+
+                                #Youtube Videos
+
+                                st.markdown("### Recomended Video & Playlists")
+
+                                for video in data["videos"]:
+                                    st.markdown(f"- [{video.title}]({video.url})")
+
+
+                                #Courses 
+
+                                st.markdown("###Recomended Courses")
+
+                                for course in data["courses"]:
+                                    st.markdown(f"[Open Courses]({course['url']})")
+
+                                    st.caption(course["content"])
+
+
+                                    #Roadmap
+
+                                    st.markdown("### Learning Roadmap")
+
+                                    roadmap_steps=(
+                                        data["roadmap"].split("\n")
+                                    )
+
+                                    for step in roadmap_steps:
+
+                                        if step.strip():
+                                            st.markdown(f"- {step}")
+                                            
+                            
+
+
+
                     else:
                         st.success("No major skill gaps detected.")
 
