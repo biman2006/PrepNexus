@@ -16,39 +16,29 @@ class RoadmapService:
         prompt = f"""
         Create a concise professional roadmap for {skill}.
 
-        Rules:
-        - Beginner to advanced
-        - Keep roadmap short and structured
-        - No long explanations
-        - Mention important tools/frameworks only
-        - Mention practical projects
-        - Output must follow this exact structure
+        
 
         Format:
 
         CORE SKILLS:
-        - skill 1
-        - skill 2
+        - short points
 
         SECONDARY SKILLS:
-        - skill 1
-        - skill 2
+        - short points
 
         ADVANCED SKILLS:
-        - skill 1
-        - skill 2
+        - short points
 
         AI QUICK RECOMMENDATIONS:
-        - short actionable point
-        - short actionable point
+        - short points only
 
-        Recommendation Rules:
-        - Maximum 5 points
-        - Each point under 10 words
+        Rules:
+        - No explanation
         - No paragraph
-        - No motivation text
-        """
+        - Maximum 5 recommendations
+        - Keep output compact"""
 
+       
         try:
             response = self.model.generate_content(prompt)
 
