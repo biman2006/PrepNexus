@@ -4,39 +4,62 @@ class RoadmapService:
         """
         Initialize roadmap service with Gemini model
         """
-        self.model = model 
+        self.model = model
 
     def generate_roadmap(self, skill):
-        """Generate a learning roadmap for a skill using Gemini"""
+
         if self.model is None:
-            return "Gemini model unavailable. Roadmap cannot be generated."
+            return {
+                "error": "Gemini model unavailable."
+            }
 
         prompt = f"""
-        Create a professional step-by-step roadmap
-        for mastering {skill}.
+        Create a concise professional roadmap for {skill}.
 
-        Requirements:
+        Rules:
         - Beginner to advanced
-        - Industry focused
-        - Practical roadmap
-        - Include projects
-        - Include tools/frameworks if needed
-        - Keep roadmap clean and structured
+        - Keep roadmap short and structured
+        - No long explanations
+        - Mention important tools/frameworks only
+        - Mention practical projects
+        - Output must follow this exact structure
 
-        Format example:
+        Format:
 
-        1. Learn fundamentals
-        2. Learn core libraries
-        3. Build beginner projects
-        4. Learn advanced concepts
-        5. Build industry-level projects
+        CORE SKILLS:
+        - skill 1
+        - skill 2
+
+        SECONDARY SKILLS:
+        - skill 1
+        - skill 2
+
+        ADVANCED SKILLS:
+        - skill 1
+        - skill 2
+
+        AI QUICK RECOMMENDATIONS:
+        - short actionable point
+        - short actionable point
+
+        Recommendation Rules:
+        - Maximum 5 points
+        - Each point under 10 words
+        - No paragraph
+        - No motivation text
         """
-            
+
         try:
             response = self.model.generate_content(prompt)
-            roadmap = response.text 
 
-            return roadmap
+            roadmap = response.text
+
+            return {
+                "skill": skill,
+                "roadmap": roadmap
+            }
+
         except Exception as e:
-            return f"Error generating roadmap: {str(e)}"
-
+            return {
+                "error": str(e)
+            }
