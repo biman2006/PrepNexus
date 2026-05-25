@@ -82,6 +82,13 @@ except Exception as e:
 from utils.gemini_config import (gemini_model)
 
 
+# CHATBOT
+
+from chatbot.chatbot_service import PrepNexusChatbot
+
+chatbot=PrepNexusChatbot(gemini_model)
+
+
 # =====================================================
 # PAGE CONFIG
 # =====================================================
@@ -641,9 +648,11 @@ def main_app():
     app_header()
     sidebar()
 
-    tab1, tab2 = st.tabs([
+    tab1, tab2,tab3 = st.tabs([
         "📊 Resume Analyzer",
-        "📝 AI Resume Builder"
+        "📝 AI Resume Builder",
+         "🤖 AI Career Chatbot"
+
     ])
 
     # =====================================================
@@ -990,7 +999,85 @@ def main_app():
             except Exception as e:
                 st.error("Resume generation failed. Please check your input and try again.")
                 st.exception(e)
+    with tab3:
 
+        st.markdown("## PrepNexus AI Career Assistant")
+
+        st.markdown(
+            """
+
+           Ask me aboutL
+           - Resume improvement
+           - ATS optimization
+           - Career roadmap
+           - Interview preparation
+           - Projects
+           - Certification
+
+
+      """
+        )
+
+
+        if "chatbot" not in st.session_state:
+
+            st.session_state.chatbot=(
+                PrepNexusChatbot(gemini_model)
+            )
+
+        chatbot=st.session_state.chatbot 
+
+
+
+        if "chat_history" not in st.session_state:
+
+            st.session_state.chat_history=[]
+
+
+        if "resume_added_to_rag" not in st.session_state:
+
+            st.session_state.resume_added_to_rag=False
+
+        if (
+            "resume_text" in locals()
+            and
+            resume_text 
+            and 
+            not st.session_state.resume_added_to_rag
+        ):
+            
+            chatbot.add_document(resume_text)
+
+            st.session_state.resume_added_to_rag=True 
+
+
+        user_message=st.chat_input(
+            "Ask anything about your career..."
+        )
+
+        if user_message:
+            st.session_state.chat_history.append({
+                "role":"user",
+                "content":user_message
+            })
+
+
+            with st.spinner("PrepNexus AI is thinking..."):
+
+                bot_response=chatbot.get_response(user_message)
+
+
+            st.session_state.chat_history.append({"role":"assistant",
+                                                  "content":bot_response})
+            
+
+        for chat in st.session_state.chat_history:
+            with st.chat_message(
+                chat["role"]
+            ):
+                
+                st.markdown(chat["content"])
+ 
 # =====================================================
 # ROUTER
 # =====================================================
