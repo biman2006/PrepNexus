@@ -66,6 +66,24 @@ PrepNexus is built to evolve beyond resume intelligence into a **full gamified i
 
 ---
 
+## 🚀 AI Skill Recommendation & Learning Resource Engine
+Automatically analyzes missing skills after resume evaluation
+Generates compact AI-powered learning recommendations
+Provides short actionable improvement steps
+Recommends practical projects based on missing skills
+Suggests important technologies/frameworks to learn
+Displays recommendations after:
+Core Skills
+Secondary Skills
+Advanced Skills
+Recommends best YouTube videos and playlists for missing skills
+Suggests curated online courses for skill improvement
+Generates personalized learning roadmaps for target roles
+Provides role-specific learning guidance from beginner to advanced
+Optimized compact response generation for faster performance
+Gemini-powered personalized career guidance
+Lightweight recommendation architecture for low response time
+
 # 📸 Platform Demo
 
 ## 🔐 Secure Authentication Interface
