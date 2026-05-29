@@ -768,69 +768,12 @@ def main_app():
                                 unsafe_allow_html=True
                             )
 
-
-                        st.markdown("---")
-                        st.subheader("AI Learning Recomendations")
-
-                        if gemini_model is not None:
-                            engine = RecomendationEngine(gemini_model)
-                            try:
-                                recomendations = engine.generate_recomendations(missing_skills)
-                            except Exception as exc:
-                                st.warning(
-                                    "AI recommendations failed. Showing available skill insights only."
-                                )
-                                print(f"Recommendation engine error: {exc}")
-                                recomendations = {
-                                    skill: {"videos": [], "courses": [], "roadmap": "AI recommendations unavailable."}
-                                    for skill in missing_skills
-                                }
-
-                            quota_warning = None
-                            for skill, data in recomendations.items():
-                                if data.get("warning"):
-                                    quota_warning = data.get("warning")
-
-                            if quota_warning:
-                                st.warning(quota_warning)
-
-                            for skill, data in recomendations.items():
-                                st.markdown("---")
-                                st.subheader(f"Learn {display_skill(skill)}")
-
-                                st.markdown("### Recomended Video & Playlists")
-                                if data.get("videos"):
-                                    for video in data["videos"]:
-                                        st.markdown(f"- [{video.title}]({video.url})")
-                                else:
-                                    st.write("No video recommendations available.")
-
-                                st.markdown("### Recomended Courses")
-                                if data.get("courses"):
-                                    for course in data["courses"]:
-                                        st.markdown(f"[Open Courses]({course['url']})")
-                                        st.caption(course["content"])
-                                else:
-                                    st.write("No course recommendations available.")
-
-                                st.markdown("### Learning Roadmap")
-                                roadmap_steps = data.get("roadmap", "").split("\n") if isinstance(data.get("roadmap"), str) else []
-                                if roadmap_steps:
-                                    for step in roadmap_steps:
-                                        if step.strip():
-                                            st.markdown(f"- {step}")
-                                else:
-                                    st.write("No roadmap available.")
-                        else:
-                            st.warning(
-                                "AI recommendations are unavailable because Gemini is not configured or the required package is missing."
-                            )
-                            
-
-
-
                     else:
                         st.success("No major skill gaps detected.")
+
+
+
+                        
 
                     st.subheader("✅ Matched Skills")
 
@@ -953,6 +896,69 @@ def main_app():
                     if temp_pdf_path and os.path.exists(temp_pdf_path):
                         os.remove(temp_pdf_path)
 
+
+
+                    st.markdown("---")
+                    st.subheader("AI Learning Recomendations")
+
+                    if gemini_model is not None:
+                            engine = RecomendationEngine(gemini_model)
+                            try:
+                                recomendations = engine.generate_recomendations(missing_skills)
+                            except Exception as exc:
+                                st.warning(
+                                    "AI recommendations failed. Showing available skill insights only."
+                                )
+                                print(f"Recommendation engine error: {exc}")
+                                recomendations = {
+                                    skill: {"videos": [], "courses": [], "roadmap": "AI recommendations unavailable."}
+                                    for skill in missing_skills
+                                }
+
+                            quota_warning = None
+                            for skill, data in recomendations.items():
+                                if data.get("warning"):
+                                    quota_warning = data.get("warning")
+
+                            if quota_warning:
+                                st.warning(quota_warning)
+
+                            for skill, data in recomendations.items():
+                                st.markdown("---")
+                                st.subheader(f"Learn {display_skill(skill)}")
+
+                                st.markdown("### Recomended Video & Playlists")
+                                if data.get("videos"):
+                                    for video in data["videos"]:
+                                        st.markdown(f"- [{video.title}]({video.url})")
+                                else:
+                                    st.write("No video recommendations available.")
+
+                                st.markdown("### Recomended Courses")
+                                if data.get("courses"):
+                                    for course in data["courses"]:
+                                        st.markdown(f"[Open Courses]({course['url']})")
+                                        st.caption(course["content"])
+                                else:
+                                    st.write("No course recommendations available.")
+
+                                st.markdown("### Learning Roadmap")
+                                roadmap_steps = data.get("roadmap", "").split("\n") if isinstance(data.get("roadmap"), str) else []
+                                if roadmap_steps:
+                                    for step in roadmap_steps:
+                                        if step.strip():
+                                            st.markdown(f"- {step}")
+                                else:
+                                    st.write("No roadmap available.")
+                    else:
+                            st.warning(
+                                "AI recommendations are unavailable because Gemini is not configured or the required package is missing."
+                            )
+                            
+
+
+
+                        
     # =====================================================
     # TAB 2
     # =====================================================
