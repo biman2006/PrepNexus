@@ -7,6 +7,12 @@ import time
 from PIL import Image
 import importlib
 
+import os 
+
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=".env")
+
 
 def _import_faiss():
     """Dynamically import FAISS from the available langchain package.
@@ -641,12 +647,26 @@ def display_skill(skill):
     return " ".join(word.capitalize() for word in skill.split())
 
 
-
+#from admin.admin_ui import AdminUI
 
 
 def main_app():
     app_header()
     sidebar()
+
+   # page=st.sidebar.radio("Navigation",
+                     #     ["User Panel",
+                         #  "Admin Panel"])
+    
+    #if page=="Admin Panel":
+        #if "admin_logged_in" not in st.session_state:
+          #  st.session_state.admin_logged_in=False 
+        #if not st.session_state.admin_logged_in:
+       #     AdminUI.login_page()
+       # else:
+         #   AdminUI.dashboard()
+
+        #return 
 
     tab1, tab2,tab3 = st.tabs([
         "📊 Resume Analyzer",

@@ -5,14 +5,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
-SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH")
-
 logging.basicConfig()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def get_env(key):
+    value = os.getenv(key)
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped if stripped else None
+    return value
+
+DB_HOST = get_env("DB_HOST")
+DB_USER = get_env("DB_USER")
+DB_PASSWORD = get_env("DB_PASSWORD")
+DB_NAME = get_env("DB_NAME")
+SQLITE_DB_PATH = get_env("SQLITE_DB_PATH")
 
 # Resolve SQLite path with Streamlit Cloud-friendly default when not on Windows.
 if not SQLITE_DB_PATH:
@@ -35,11 +43,11 @@ if DB_HOST and DB_USER and DB_PASSWORD and DB_NAME:
         # attempt a quick connection to validate settings
         with engine.connect() as conn:
             pass
-        logger.info("Connected to MySQL database at %s", DB_HOST)
+        logger.info("Connected to MySQL database at %s, using database %s", DB_HOST, DB_NAME)
     except Exception as e:
-        logger.warning("Could not connect to MySQL at %s, falling back to SQLite: %s", DB_HOST, e)
-        engine = create_engine(sqlite_url)
+        logger.warning("Could not connect to MySQL at %s; falling back to SQLite %s: %s", DB_HOST, SQLITE_DB_PATH, e)
+        engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
         logger.info("Using SQLite database at %s", SQLITE_DB_PATH)
 else:
     logger.info("MySQL credentials not fully provided; using SQLite database at %s.", SQLITE_DB_PATH)
-    engine = create_engine(sqlite_url)
+    engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
