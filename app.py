@@ -93,6 +93,7 @@ from utils.gemini_config import (gemini_model)
 from chatbot.chatbot_service import PrepNexusChatbot
 
 chatbot=PrepNexusChatbot(gemini_model)
+from admin.admin_ui import show_admin_panel
 
 
 # =====================================================
@@ -203,6 +204,18 @@ def init_session():
 
 init_session()
 initialize_database()
+
+def is_admin():
+    admin_email = os.getenv("ADMIN_EMAIL")
+
+    if not admin_email:
+        return False
+
+    return (
+        st.session_state.user_email.lower()
+        ==
+        admin_email.lower()
+    )
 
 # =====================================================
 # LOGIN PAGE
@@ -653,6 +666,21 @@ def display_skill(skill):
 def main_app():
     app_header()
     sidebar()
+    # Role-based navigation: admin users get both User Panel and Admin Panel.
+    if is_admin():
+        page = st.sidebar.radio(
+            "Navigation",
+            [
+                "User Panel",
+                "Admin Panel"
+            ]
+        )
+    else:
+        page = "User Panel"
+
+    if page == "Admin Panel":
+        show_admin_panel()
+        return
 
    # page=st.sidebar.radio("Navigation",
                      #     ["User Panel",

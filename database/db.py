@@ -20,6 +20,7 @@ DB_HOST = get_env("DB_HOST")
 DB_USER = get_env("DB_USER")
 DB_PASSWORD = get_env("DB_PASSWORD")
 DB_NAME = get_env("DB_NAME")
+DB_PORT=get_env("DB_PORT")
 SQLITE_DB_PATH = get_env("SQLITE_DB_PATH")
 
 # Resolve SQLite path with Streamlit Cloud-friendly default when not on Windows.
@@ -37,7 +38,7 @@ sqlite_url = f"sqlite:///{SQLITE_DB_PATH}"
 
 # Prefer MySQL when credentials are provided; fall back to SQLite for local/testing.
 if DB_HOST and DB_USER and DB_PASSWORD and DB_NAME:
-    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     try:
         engine = create_engine(DATABASE_URL, pool_pre_ping=True)
         # attempt a quick connection to validate settings
