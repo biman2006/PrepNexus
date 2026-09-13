@@ -280,50 +280,101 @@ button[kind="secondary"] {
 }
 
 /* =====================================================
-   COLLAPSIBLE SIDEBAR OVERLAY DRAWER STYLING
+   OVERLAY DRAWER LAYOUT — ROOT-CAUSE FIX
    ===================================================== */
+
+/*
+ * FIX: The .stAppViewContainer is a flex row (flex-direction:row).
+ * The sidebar is a flex child. When we set position:fixed on it,
+ * it leaves the flex flow, but the flex container still may misalign stMain.
+ * The fix: keep sidebar as position:absolute on a positioned parent,
+ * force it to occupy 0 flex space, and let stMain use flex:1 1 auto.
+ *
+ * The stAppViewContainer is already position:absolute (top:0,left:0,right:0,bottom:0)
+ * so we can use position:absolute on the sidebar safely.
+ */
+
+/* The flex container must be positioned so children can use position:absolute */
 [data-testid="stAppViewContainer"] {
-    overflow-x: hidden !important;
-}
-
-[data-testid="stAppViewContainer"] > .stMain,
-.stMain,
-[data-testid="stMain"] {
-    width: 100% !important;
-    min-width: 100% !important;
-    margin-left: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
     left: 0 !important;
-    position: relative !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: row !important;
 }
 
+/* Main content wrapper: take all available flex space, no left reserve for sidebar */
+[data-testid="stMain"] {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+/* Block container: full width, properly padded, no sidebar offset */
 [data-testid="stMainBlockContainer"],
 .main .block-container {
     max-width: 1540px !important;
     width: 100% !important;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
-    padding-top: 1rem !important;
+    /* padding-top must clear Streamlit's own absolute-positioned stHeader (~60px) */
+    padding-top: 5rem !important;
     padding-bottom: 3rem !important;
     margin: 0 auto !important;
+    box-sizing: border-box !important;
 }
 
-/* Sidebar as an Overlay Drawer */
+/* ── SIDEBAR AS OVERLAY DRAWER ─────────────────────────── */
+/*
+ * Take sidebar OUT of the flex flow completely so it can never
+ * reserve horizontal space. Use position:absolute so it overlays
+ * on top of the app without pushing stMain sideways.
+ *
+ * When collapsed (aria-expanded="false"):
+ *   - width=340px but transform: translateX(-340px) hides it off-screen
+ *   - width/min-width/max-width overrides neutralise Streamlit's own
+ *     min-width:0 / max-width:0 so the drawer stays the right size
+ *     and doesn't collapse to 0 width when open
+ *
+ * When expanded (aria-expanded="true"):
+ *   - transform: none — slides in from left
+ */
 section[data-testid="stSidebar"] {
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     bottom: 0 !important;
-    height: 100vh !important;
+    height: 100% !important;
+    /* Fixed drawer width — overrides Streamlit's own min/max-width calc */
     width: 340px !important;
     min-width: 340px !important;
-    max-width: 350px !important;
-    z-index: 1000000 !important;
+    max-width: 340px !important;
+    /* flex-shrink/grow 0 so it doesn't participate in flex sizing */
+    flex: 0 0 auto !important;
+    /* Translate OFF-SCREEN when collapsed — no layout space consumed */
+    transform: translateX(-340px) !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.28s ease !important;
+    z-index: 100000 !important;
     background: rgba(11, 15, 25, 0.98) !important;
     backdrop-filter: blur(24px) !important;
     -webkit-backdrop-filter: blur(24px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.85) !important;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* When OPEN — slide in, add shadow */
+section[data-testid="stSidebar"][aria-expanded="true"] {
+    transform: translateX(0) !important;
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.9) !important;
 }
 
 /* Dimmed backdrop when sidebar is open */
@@ -337,7 +388,7 @@ section[data-testid="stSidebar"][aria-expanded="true"]::after {
     background: rgba(0, 0, 0, 0.65) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
-    z-index: 999999 !important;
+    z-index: 99999 !important;
     cursor: pointer !important;
     pointer-events: auto !important;
     animation: drawerBackdropFade 0.22s ease-out forwards;
@@ -348,12 +399,41 @@ section[data-testid="stSidebar"][aria-expanded="true"]::after {
     to { opacity: 1; }
 }
 
-/* Hide default collapse controls */
+/* ── HIDE ALL STREAMLIT NATIVE SIDEBAR TOGGLE CONTROLS ── */
+/*
+ * In Streamlit 1.57, the collapse button inside the sidebar header
+ * has data-testid="stSidebarCollapseButton".
+ * The expand button in the app toolbar has data-testid="stExpandSidebarButton".
+ * The resize handle is inside the sidebar and not needed for overlay mode.
+ * Hide all of them — our custom navbar ☰ button handles open/close.
+ */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stExpandSidebarButton"],
 [data-testid="collapsedControl"] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Hide the sidebar resize handle */
+[data-testid="stSidebar"] > div > div:last-child[style*="cursor: col-resize"],
+section[data-testid="stSidebar"] > div > div[style*="cursor: col-resize"] {
     display: none !important;
 }
 
-[data-testid="stSidebarCollapseButton"] {
+/* ── STREAMLIT HEADER: fix z-index so it stays above our content ── */
+header[data-testid="stHeader"] {
+    z-index: 99999 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+}
+
+/* Hide the Streamlit header decorative bar that causes dead zone */
+[data-testid="stDecoration"] {
     display: none !important;
 }
 
@@ -877,109 +957,115 @@ def render_top_navbar():
 # =====================================================
 def render_drawer_scripts():
     """
-    Injects a small JS snippet (inside an iframe via components.html) that:
-    - Wires the top-navbar ☰ Menu button to toggle Streamlit's sidebar.
-    - Wires the profile button to open the sidebar.
-    - Wires the in-sidebar ✕ Close button to close the sidebar.
-    - Closes the sidebar when the user clicks on the dimmed backdrop area.
+    Injects JS (via components.html iframe) that:
+    - Drives the sidebar open/close by directly toggling aria-expanded
+      on the section[data-testid="stSidebar"] element.
+    - The CSS translate rules react to aria-expanded="true"/"false".
+    - Wires: ☰ Menu button, profile button, ✕ Close button, backdrop click.
     """
     script = """
     <script>
     (function() {
-        // Helper: find a button in the parent document
-        function parentBtn(selector) {
-            return window.parent.document.querySelector(selector);
+        var p = window.parent.document;
+
+        function getSidebar() {
+            return p.querySelector('section[data-testid="stSidebar"]');
+        }
+
+        function isOpen() {
+            var sb = getSidebar();
+            return sb && sb.getAttribute('aria-expanded') === 'true';
         }
 
         function openSidebar() {
-            var toggleBtn = parentBtn('[data-testid="collapsedControl"] button');
-            var sidebar = parentBtn('section[data-testid="stSidebar"]');
-            if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-                if (toggleBtn) toggleBtn.click();
-            } else if (!sidebar) {
-                if (toggleBtn) toggleBtn.click();
+            var sb = getSidebar();
+            if (sb && !isOpen()) {
+                sb.setAttribute('aria-expanded', 'true');
             }
         }
 
         function closeSidebar() {
-            var sidebar = parentBtn('section[data-testid="stSidebar"]');
-            if (sidebar && sidebar.getAttribute('aria-expanded') === 'true') {
-                var closeBtn = parentBtn('[data-testid="stSidebarCollapseButton"] button');
-                if (closeBtn) closeBtn.click();
+            var sb = getSidebar();
+            if (sb && isOpen()) {
+                sb.setAttribute('aria-expanded', 'false');
             }
         }
 
-        function isOpen() {
-            var sidebar = parentBtn('section[data-testid="stSidebar"]');
-            return sidebar && sidebar.getAttribute('aria-expanded') === 'true';
+        function toggleSidebar() {
+            if (isOpen()) { closeSidebar(); } else { openSidebar(); }
         }
 
-        // Wire top navbar buttons
-        function wireNavbarBtns() {
-            var menuBtn = parentBtn('#top-nav-menu-btn');
-            var profileBtn = parentBtn('#top-nav-profile-btn');
-            var closeBtn = parentBtn('#sidebar-close-btn');
-
-            if (menuBtn && !menuBtn._wired) {
-                menuBtn._wired = true;
-                menuBtn.addEventListener('click', function(e) {
+        // Wire a button element found in the parent document
+        function wire(selector, handler) {
+            var el = p.querySelector(selector);
+            if (el && !el._pnWired) {
+                el._pnWired = true;
+                el.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    if (isOpen()) { closeSidebar(); } else { openSidebar(); }
-                });
-            }
-            if (profileBtn && !profileBtn._wired) {
-                profileBtn._wired = true;
-                profileBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openSidebar();
-                });
-            }
-            if (closeBtn && !closeBtn._wired) {
-                closeBtn._wired = true;
-                closeBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    closeSidebar();
+                    handler();
                 });
             }
         }
 
-        // Close on backdrop click (clicking to the right of the 340px sidebar)
+        function wireAll() {
+            wire('#top-nav-menu-btn', toggleSidebar);
+            wire('#top-nav-profile-btn', openSidebar);
+            wire('#sidebar-close-btn', closeSidebar);
+        }
+
+        // Backdrop: close when clicking the dimmed area to the right of the drawer
         function wireBackdrop() {
-            if (window.parent.document._backdropWired) return;
-            window.parent.document._backdropWired = true;
-            window.parent.document.addEventListener('click', function(e) {
+            if (p._pnBackdropWired) return;
+            p._pnBackdropWired = true;
+            p.addEventListener('click', function(e) {
                 if (!isOpen()) return;
-                var sidebar = parentBtn('section[data-testid="stSidebar"]');
-                if (!sidebar) return;
-                var rect = sidebar.getBoundingClientRect();
+                var sb = getSidebar();
+                if (!sb) return;
+                var rect = sb.getBoundingClientRect();
+                // Click is outside the sidebar panel
                 if (e.clientX > rect.right + 5) {
                     closeSidebar();
                 }
             }, true);
         }
 
-        // Re-wire on every render (Streamlit re-renders wipe DOM)
-        function tryWire() {
-            wireNavbarBtns();
+        function init() {
+            wireAll();
             wireBackdrop();
         }
 
-        // Wait for parent document to be ready, then wire
-        if (window.parent.document.readyState === 'complete') {
-            setTimeout(tryWire, 300);
+        // Initial wire-up (after DOM is ready)
+        if (p.readyState === 'complete') {
+            setTimeout(init, 250);
         } else {
-            window.parent.document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(tryWire, 300);
+            p.addEventListener('DOMContentLoaded', function() {
+                setTimeout(init, 250);
             });
         }
 
-        // Also re-run every 800ms to catch Streamlit re-renders
-        var _interval = setInterval(function() {
-            wireNavbarBtns();
-        }, 800);
+        // Re-wire every 600ms to handle Streamlit re-renders that re-create DOM nodes
+        // (aria-expanded is preserved on the section element across re-renders)
+        var _t = setInterval(function() {
+            // Re-wire buttons (DOM nodes may have been replaced by Streamlit)
+            var menuBtn = p.querySelector('#top-nav-menu-btn');
+            var profileBtn = p.querySelector('#top-nav-profile-btn');
+            var closeBtn = p.querySelector('#sidebar-close-btn');
+            if (menuBtn && !menuBtn._pnWired) {
+                menuBtn._pnWired = true;
+                menuBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleSidebar(); });
+            }
+            if (profileBtn && !profileBtn._pnWired) {
+                profileBtn._pnWired = true;
+                profileBtn.addEventListener('click', function(e) { e.stopPropagation(); openSidebar(); });
+            }
+            if (closeBtn && !closeBtn._pnWired) {
+                closeBtn._pnWired = true;
+                closeBtn.addEventListener('click', function(e) { e.stopPropagation(); closeSidebar(); });
+            }
+        }, 600);
 
-        // Stop polling after 60 seconds to avoid memory leaks
-        setTimeout(function() { clearInterval(_interval); }, 60000);
+        // Clean up after 3 minutes (Streamlit will re-inject on next render anyway)
+        setTimeout(function() { clearInterval(_t); }, 180000);
     })();
     </script>
     """
