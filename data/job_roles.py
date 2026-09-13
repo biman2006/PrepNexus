@@ -1,6 +1,6 @@
 
 
-# Production-Grade `job_roles.py` for PrepNus
+# Production-Grade `job_roles.py` for PrepNexus
 
 try:
     from langchain_core.documents import Document

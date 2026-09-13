@@ -49,10 +49,11 @@ from data.role_weights import role_skill_weights
 
 
 from utils.pdf_exporter import generate_resume_pdf
-from utils.auth import hash_password
+from utils.auth import hash_password, is_strong_password
 
 from database.crud import (
     get_user_by_email,
+    get_user_by_id,
     register_user,
     authenticate_user,
     save_resume,
@@ -115,13 +116,16 @@ st.set_page_config(
 st.markdown("""
 <style>
 .main {
-    background: linear-gradient(to bottom right, #0f172a, #1e293b);
+    background: linear-gradient(135deg, #071a2b 0%, #0b2942 55%, #123b4a 100%);
 }
 .block-container {
     padding-top: 2rem;
 }
 h1, h2, h3 {
     color: white;
+}
+.stApp {
+    background: radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 32%), #071a2b;
 }
 .stButton > button {
     width: 100%;
@@ -181,13 +185,7 @@ def is_valid_email(email):
 
 
 def is_valid_password(password):
-    if len(password) < 8:
-        return False
-    return bool(
-        re.search(r"[A-Z]", password)
-        and re.search(r"[a-z]", password)
-        and re.search(r"\d", password)
-    )
+    return is_strong_password(password)
 
 # =====================================================
 # SESSION STATE INIT
@@ -195,8 +193,10 @@ def is_valid_password(password):
 def init_session():
     defaults = {
         "logged_in": False,
+        "user_id": None,
         "user_email": "",
         "user_name": "",
+        "user_role": "user",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -206,16 +206,11 @@ init_session()
 initialize_database()
 
 def is_admin():
-    admin_email = os.getenv("ADMIN_EMAIL")
-
-    if not admin_email:
+    user_id = st.session_state.get("user_id")
+    if not st.session_state.get("logged_in") or not user_id:
         return False
-
-    return (
-        st.session_state.user_email.lower()
-        ==
-        admin_email.lower()
-    )
+    user = get_user_by_id(user_id)
+    return bool(user and user.is_active and user.role == "admin")
 
 # =====================================================
 # LOGIN PAGE
@@ -317,8 +312,10 @@ def login_page():
                         user = register_user(name, normalized_email, password_hash)
                         if user:
                             st.session_state.logged_in = True
+                            st.session_state.user_id = user.id
                             st.session_state.user_email = normalized_email
                             st.session_state.user_name = name
+                            st.session_state.user_role = user.role
                             st.success("✅ Account created and logged in successfully.")
                             time.sleep(1)
                             st.rerun()
@@ -327,26 +324,20 @@ def login_page():
 
                 elif auth_mode == "Login":
                     if not existing_user:
-                        st.warning("⚠️ Account not found. Please create an account first.")
+                        st.warning("Invalid email or password.")
                     else:
-                        if not existing_user.password_hash and existing_user.otp:
-                            st.warning(
-                                "This account was created with legacy OTP login. "
-                                "Enter the OTP sent to your email as a temporary password to migrate your account."
-                            )
-
                         user = authenticate_user(normalized_email, password)
                         if user:
                             st.session_state.logged_in = True
+                            st.session_state.user_id = user.id
                             st.session_state.user_email = normalized_email
                             st.session_state.user_name = user.name or ""
+                            st.session_state.user_role = user.role
                             st.success("🎉 Login successful!")
                             time.sleep(1)
                             st.rerun()
                         else:
                             st.error("❌ Invalid credentials. Please try again.")
-
-    st.stop()
 
     st.stop()
 
@@ -358,10 +349,16 @@ def app_header():
     with col2:
         st.image(logo, width=550)
 
-    st.title("🚀 PrepNexus Interview Preparation Platform")
+    st.title("PrepNexus Interview Preparation Platform")
     st.subheader(
         "Analyze resumes, identify skill gaps, build ATS-optimized resumes, and accelerate your career growth."
     )
+    resumes = get_user_resumes(st.session_state.user_email)
+    latest_score = next((resume.readiness_score for resume in reversed(resumes) if resume.readiness_score is not None), None)
+    metric_one, metric_two, metric_three = st.columns(3)
+    metric_one.metric("Saved resumes", len(resumes))
+    metric_two.metric("Latest readiness", f"{latest_score:.0f}%" if latest_score is not None else "Not analyzed")
+    metric_three.metric("Account", "Administrator" if is_admin() else "Candidate")
 
 # =====================================================
 # VECTORSTORE
@@ -443,9 +440,15 @@ def sidebar():
     st.sidebar.markdown("## 🚀 PrepNexus")
     st.sidebar.markdown(f"### 👤 {st.session_state.user_name or st.session_state.user_email}")
 
-    if st.sidebar.button("🚪 Logout"):
-        for key in ["logged_in", "user_email", "user_name"]:
-            st.session_state[key] = False if key == "logged_in" else ""
+    if st.sidebar.button("Logout"):
+        for key, value in {
+            "logged_in": False,
+            "user_id": None,
+            "user_email": "",
+            "user_name": "",
+            "user_role": "user",
+        }.items():
+            st.session_state[key] = value
         st.rerun()
 
 # =====================================================
@@ -934,11 +937,10 @@ def main_app():
                             "Prioritize foundational skill development before applying aggressively."
                         )
 
-                except Exception as e:
+                except Exception:
                     st.error(
                         "Resume analysis failed. Please try again or contact support."
                     )
-                    st.exception(e)
 
                 finally:
                     if temp_pdf_path and os.path.exists(temp_pdf_path):
@@ -947,9 +949,9 @@ def main_app():
 
 
                     st.markdown("---")
-                    st.subheader("AI Learning Recomendations")
+                    st.subheader("AI Learning Recommendations")
 
-                    if gemini_model is not None:
+                    if "missing_skills" in locals() and gemini_model is not None:
                             engine = RecomendationEngine(gemini_model)
                             try:
                                 recomendations = engine.generate_recomendations(missing_skills)
@@ -975,14 +977,14 @@ def main_app():
                                 st.markdown("---")
                                 st.subheader(f"Learn {display_skill(skill)}")
 
-                                st.markdown("### Recomended Video & Playlists")
+                                st.markdown("### Recommended Videos and Playlists")
                                 if data.get("videos"):
                                     for video in data["videos"]:
                                         st.markdown(f"- [{video.title}]({video.url})")
                                 else:
                                     st.write("No video recommendations available.")
 
-                                st.markdown("### Recomended Courses")
+                                st.markdown("### Recommended Courses")
                                 if data.get("courses"):
                                     for course in data["courses"]:
                                         st.markdown(f"[Open Courses]({course['url']})")
@@ -999,9 +1001,10 @@ def main_app():
                                 else:
                                     st.write("No roadmap available.")
                     else:
-                            st.warning(
+                            if "missing_skills" in locals():
+                                st.warning(
                                 "AI recommendations are unavailable because Gemini is not configured or the required package is missing."
-                            )
+                                )
                             
 
 
@@ -1026,6 +1029,10 @@ def main_app():
         if st.button("🚀 Generate Resume"):
             from utils.resume_api_builder import generate_resume
             try:
+                if not name.strip() or not email.strip() or not skills.strip():
+                    st.warning("Name, email, and skills are required to generate a resume.")
+                    st.stop()
+
                 generated_resume = generate_resume(
                     name=name,
                     email=email,
@@ -1035,6 +1042,14 @@ def main_app():
                     experience=experience,
                     projects=projects,
                     education=education
+                )
+
+                save_resume(
+                    st.session_state.user_email,
+                    role,
+                    generated_resume,
+                    None,
+                    None,
                 )
 
                 st.success("✅ Resume Generated Successfully")
@@ -1050,9 +1065,8 @@ def main_app():
                         mime="application/pdf"
                     )
 
-            except Exception as e:
+            except Exception:
                 st.error("Resume generation failed. Please check your input and try again.")
-                st.exception(e)
     with tab3:
 
         st.markdown("## PrepNexus AI Career Assistant")

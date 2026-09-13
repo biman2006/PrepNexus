@@ -3,23 +3,14 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from database.db import engine
+from database.crud import get_user_by_id
 
 load_dotenv()
 
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
-
-
 def is_admin():
-
-    if "user_email" not in st.session_state:
-        return False
-
-    if not ADMIN_EMAIL:
-        return False
-
-    current_user = st.session_state["user_email"].strip().lower()
-
-    return current_user == ADMIN_EMAIL.strip().lower()
+    user_id = st.session_state.get("user_id")
+    user = get_user_by_id(user_id) if user_id else None
+    return bool(user and user.is_active and user.role == "admin")
 
 
 def show_admin_panel():
@@ -38,9 +29,7 @@ def show_admin_panel():
 
     st.title("🛠️ PrepNexus Admin Dashboard")
 
-    st.success(
-        f"Logged in as Admin: {st.session_state.user_email}"
-    )
+    st.success(f"Logged in as Admin: {st.session_state.user_email}")
 
     # ==============================
     # DATABASE INFO
@@ -48,7 +37,7 @@ def show_admin_panel():
 
     st.subheader("🗄️ Database Information")
 
-    st.code(str(engine.url))
+    st.info("Database connection details are hidden from the UI.")
 
     # ==============================
     # USER SECTION
@@ -165,7 +154,4 @@ def show_admin_panel():
         st.session_state.user_email
     )
 
-    st.write(
-        "Admin Email:",
-        ADMIN_EMAIL
-    )
+    st.write("Role:", st.session_state.get("user_role", "admin"))

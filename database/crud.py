@@ -31,7 +31,9 @@ def register_user(name, email, password_hash):
             name=name,
             email=email,
             password_hash=password_hash,
-            is_verified=1
+            is_verified=1,
+            role="user",
+            is_active=1,
         )
 
         session.add(new_user)
@@ -51,23 +53,14 @@ def authenticate_user(email, password):
     session = SessionLocal()
     try:
         user = session.query(User).filter_by(email=email).first()
-        if not user:
+        if not user or not user.is_active:
             return None
 
         if user.password_hash:
-            from utils.auth import hash_password, verify_password
+            from utils.auth import verify_password
             if verify_password(password, user.password_hash):
                 return user
             return None
-
-        # Legacy account migration: if the user was created with OTP-based auth,
-        # allow OTP login once and migrate the account to password-based auth.
-        if user.otp and password == user.otp:
-            user.password_hash = hash_password(password)
-            user.otp = None
-            user.is_verified = 1
-            session.commit()
-            return user
 
         return None
     finally:
@@ -195,5 +188,14 @@ def Delete_user(user_id):
 
         return True 
     
+    finally:
+        session.close()
+
+
+def get_user_by_id(user_id):
+    from database.models import User
+    session = SessionLocal()
+    try:
+        return session.query(User).filter_by(id=user_id).first()
     finally:
         session.close()

@@ -75,16 +75,21 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
-    if not stored_hash or "$" not in stored_hash:
+    if not isinstance(password, str) or not isinstance(stored_hash, str):
         return False
 
-    salt, hash_hex = stored_hash.split("$", 1)
-    test_hash = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        200000
-    ).hex()
+    try:
+        salt, hash_hex = stored_hash.split("$", 1)
+        if not salt or len(hash_hex) != 64:
+            return False
+        test_hash = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt.encode("utf-8"),
+            200000
+        ).hex()
+    except (TypeError, ValueError, UnicodeError):
+        return False
 
     return secrets.compare_digest(test_hash, hash_hex)
 

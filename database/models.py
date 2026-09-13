@@ -24,6 +24,10 @@ class User(Base):
 
     name=Column(String(255),nullable=True)
 
+    role=Column(String(32), nullable=False, default="user")
+
+    is_active=Column(Integer, nullable=False, default=1)
+
     is_verified=Column(
         Integer,
         default=0

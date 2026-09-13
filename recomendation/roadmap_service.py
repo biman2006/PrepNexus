@@ -40,7 +40,11 @@ class RoadmapService:
 
        
         try:
-            response = self.model.generate_content(prompt)
+            response = self.model.generate_content(prompt,
+                                                   generation_config={
+                                                       "max_output_tokens":250,
+                                                       "temperature":0.3
+                                                   })
 
             roadmap = response.text
 

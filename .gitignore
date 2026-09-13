@@ -90,3 +90,9 @@ Thumbs.db
 # =====================================================
 
 *.swp
+
+* admin_auth.py
+
+* admin_dashboard.py
+* admin_service.py
+* admin_ui.py
