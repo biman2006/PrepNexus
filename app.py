@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import tempfile
 import os
 import re
@@ -89,7 +90,7 @@ st.set_page_config(
     page_title="PrepNexus | AI Career & ATS Intelligence",
     page_icon=icon or "🎯",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # =====================================================
@@ -278,19 +279,308 @@ button[kind="secondary"] {
     margin-bottom: 14px;
 }
 
-/* JWT Security Badge in Sidebar */
-.jwt-pill {
+/* =====================================================
+   COLLAPSIBLE SIDEBAR OVERLAY DRAWER STYLING
+   ===================================================== */
+[data-testid="stAppViewContainer"] {
+    overflow-x: hidden !important;
+}
+
+[data-testid="stAppViewContainer"] > .stMain,
+.stMain,
+[data-testid="stMain"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
+    left: 0 !important;
+    position: relative !important;
+}
+
+[data-testid="stMainBlockContainer"],
+.main .block-container {
+    max-width: 1540px !important;
+    width: 100% !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 3rem !important;
+    margin: 0 auto !important;
+}
+
+/* Sidebar as an Overlay Drawer */
+section[data-testid="stSidebar"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 340px !important;
+    min-width: 340px !important;
+    max-width: 350px !important;
+    z-index: 1000000 !important;
+    background: rgba(11, 15, 25, 0.98) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.85) !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease !important;
+}
+
+/* Dimmed backdrop when sidebar is open */
+section[data-testid="stSidebar"][aria-expanded="true"]::after {
+    content: '';
+    position: fixed !important;
+    top: 0 !important;
+    left: 340px !important;
+    width: calc(100vw - 340px) !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    z-index: 999999 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    animation: drawerBackdropFade 0.22s ease-out forwards;
+}
+
+@keyframes drawerBackdropFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Hide default collapse controls */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
+
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+
+/* Top Navigation Bar */
+.top-navbar-container {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 12px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.top-navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.top-navbar-menu-btn {
     display: inline-flex;
     align-items: center;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10B981;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #F8FAFC;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.top-navbar-menu-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+}
+
+.top-navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.top-navbar-brand .brand-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.3px;
+}
+
+.top-navbar-brand .brand-sub {
+    font-size: 13px;
+    font-weight: 500;
+    color: #94A3B8;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    padding-left: 10px;
+    margin-left: 2px;
+}
+
+.top-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.top-navbar-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    padding: 5px 14px 5px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.top-navbar-profile:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.top-navbar-profile .profile-avatar {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, #6366F1, #2563EB);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+}
+
+.top-navbar-profile .profile-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #F8FAFC;
+}
+
+.top-navbar-profile .profile-badge {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818CF8;
+    border-radius: 6px;
+    padding: 1px 7px;
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    letter-spacing: 0.4px;
-    margin-top: 6px;
+}
+
+/* Sidebar Drawer Header Row */
+.sidebar-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-drawer-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94A3B8;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-drawer-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #F87171;
+}
+
+/* Clean Simplified Session Card */
+.sidebar-session-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 18px;
+}
+
+.sidebar-section-header {
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748B;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+}
+
+.sidebar-user-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.3;
+}
+
+.sidebar-user-email {
+    font-size: 12px;
+    color: #94A3B8;
+    word-break: break-all;
+    margin-top: 2px;
+}
+
+.sidebar-user-role {
+    margin-top: 8px;
+}
+
+.role-chip {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.18);
+    color: #818CF8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.sidebar-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 12px 0;
+}
+
+.sidebar-auth-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #10B981;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sidebar-session-detail {
+    font-size: 12px;
+    color: #CBD5E1;
+    line-height: 1.4;
+}
+
+.sidebar-session-sub {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -466,41 +756,73 @@ def login_page():
 # =====================================================
 def render_sidebar():
     with st.sidebar:
-        if logo:
-            st.image(logo, width=220)
-        else:
-            st.markdown("## 🎯 PrepNexus")
+        # ── Drawer Header Row ─────────────────────────────
+        user_name = st.session_state.user_name or "Candidate"
+        user_email = st.session_state.user_email or ""
+        user_role = st.session_state.user_role or "user"
+        role_label = "Administrator" if user_role == "admin" else "Candidate"
 
-        # User profile chip
-        st.markdown(f"""
-        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 14px; border-radius: 14px; margin-bottom: 14px;">
-            <div style="font-weight: 700; color: #FFFFFF; font-size: 15px;">👤 {st.session_state.user_name or 'Candidate'}</div>
-            <div style="color: #94A3B8; font-size: 12px; margin-top: 2px;">{st.session_state.user_email}</div>
-            <div class="jwt-pill">🛡️ JWT AUTHENTICATED</div>
+        # Close button (triggers Streamlit's own collapse control via JS)
+        st.markdown("""
+        <div class="sidebar-header-row">
+            <div class="sidebar-brand-box">
+                <span style="font-size:20px;">🎯</span>
+                <span style="font-size:15px; font-weight:800; color:#FFFFFF; letter-spacing:-0.3px;">PrepNexus</span>
+            </div>
+            <button
+                id="sidebar-close-btn"
+                class="sidebar-drawer-close-btn"
+                title="Close Menu">
+                ✕ Close
+            </button>
         </div>
         """, unsafe_allow_html=True)
 
-        # JWT Token Inspection
+        # ── Account Section ───────────────────────────────
+        avatar_letter = user_name[0].upper() if user_name else "U"
+        st.markdown(f"""
+        <div class="sidebar-session-card">
+            <div class="sidebar-section-header">ACCOUNT</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#6366F1,#2563EB); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#fff; flex-shrink:0;">{avatar_letter}</div>
+                <div>
+                    <div class="sidebar-user-name">{user_name}</div>
+                    <div class="sidebar-user-email">{user_email}</div>
+                </div>
+            </div>
+            <div class="sidebar-user-role"><span class="role-chip">{role_label}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── Authentication & Session ──────────────────────
         token = st.session_state.get("jwt_token")
+        expires_display = "—"
+        ttl_display = ""
         if token:
             claims = get_jwt_token_claims(token)
-            with st.expander("🔑 Session JWT Claims"):
-                st.caption(f"**Expires:** {claims.get('expires_at')}")
-                st.caption(f"**TTL:** {claims.get('time_remaining')}")
-                st.caption(f"**Role:** {claims.get('role')}")
-                st.caption(f"**Issuer:** {claims.get('issuer')}")
-                st.code(token, language="text")
-                st.caption("Use this Bearer token for authorized REST API calls.")
+            expires_display = claims.get("expires_at", "—")
+            ttl_display = claims.get("time_remaining", "")
 
-        st.markdown("---")
+        st.markdown(f"""
+        <div class="sidebar-session-card">
+            <div class="sidebar-section-header">AUTHENTICATION</div>
+            <div class="sidebar-auth-status">✅ Authenticated</div>
+            <div style="height:10px;"></div>
+            <div class="sidebar-section-header">SESSION</div>
+            <div class="sidebar-session-detail">Expires: {expires_display}</div>
+            {f'<div class="sidebar-session-sub">TTL: {ttl_display}</div>' if ttl_display else ''}
+        </div>
+        """, unsafe_allow_html=True)
 
-        # Navigation mode
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+
+        # ── Navigation (admin only) ───────────────────────
         if is_admin():
             nav = st.radio("Navigation", ["User Workspace", "Admin Console"], horizontal=True)
         else:
             nav = "User Workspace"
 
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
         if st.button("🚪 Log Out", use_container_width=True):
             st.session_state.clear()
@@ -508,6 +830,160 @@ def render_sidebar():
             st.rerun()
 
         return nav
+
+
+# =====================================================
+# TOP NAVIGATION BAR
+# =====================================================
+def render_top_navbar():
+    user_name = st.session_state.user_name or "Candidate"
+    user_role = st.session_state.user_role or "user"
+    role_label = "Administrator" if user_role == "admin" else "Candidate Pro"
+    avatar_letter = user_name[0].upper() if user_name else "U"
+
+    st.markdown(f"""
+    <div class="top-navbar-container" id="top-navbar">
+        <div class="top-navbar-left">
+            <button
+                id="top-nav-menu-btn"
+                class="top-navbar-menu-btn"
+                title="Open Navigation Menu"
+                aria-label="Open sidebar menu">
+                ☰ Menu
+            </button>
+            <div class="top-navbar-brand">
+                <span style="font-size:20px;">🎯</span>
+                <span class="brand-title">PrepNexus</span>
+                <span class="brand-sub">Career Intelligence</span>
+            </div>
+        </div>
+        <div class="top-navbar-right">
+            <button
+                id="top-nav-profile-btn"
+                class="top-navbar-profile"
+                title="Open Profile"
+                aria-label="Open profile sidebar">
+                <div class="profile-avatar">{avatar_letter}</div>
+                <span class="profile-name">{user_name}</span>
+                <span class="profile-badge">{role_label}</span>
+            </button>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# =====================================================
+# DRAWER INTERACTION SCRIPTS
+# =====================================================
+def render_drawer_scripts():
+    """
+    Injects a small JS snippet (inside an iframe via components.html) that:
+    - Wires the top-navbar ☰ Menu button to toggle Streamlit's sidebar.
+    - Wires the profile button to open the sidebar.
+    - Wires the in-sidebar ✕ Close button to close the sidebar.
+    - Closes the sidebar when the user clicks on the dimmed backdrop area.
+    """
+    script = """
+    <script>
+    (function() {
+        // Helper: find a button in the parent document
+        function parentBtn(selector) {
+            return window.parent.document.querySelector(selector);
+        }
+
+        function openSidebar() {
+            var toggleBtn = parentBtn('[data-testid="collapsedControl"] button');
+            var sidebar = parentBtn('section[data-testid="stSidebar"]');
+            if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
+                if (toggleBtn) toggleBtn.click();
+            } else if (!sidebar) {
+                if (toggleBtn) toggleBtn.click();
+            }
+        }
+
+        function closeSidebar() {
+            var sidebar = parentBtn('section[data-testid="stSidebar"]');
+            if (sidebar && sidebar.getAttribute('aria-expanded') === 'true') {
+                var closeBtn = parentBtn('[data-testid="stSidebarCollapseButton"] button');
+                if (closeBtn) closeBtn.click();
+            }
+        }
+
+        function isOpen() {
+            var sidebar = parentBtn('section[data-testid="stSidebar"]');
+            return sidebar && sidebar.getAttribute('aria-expanded') === 'true';
+        }
+
+        // Wire top navbar buttons
+        function wireNavbarBtns() {
+            var menuBtn = parentBtn('#top-nav-menu-btn');
+            var profileBtn = parentBtn('#top-nav-profile-btn');
+            var closeBtn = parentBtn('#sidebar-close-btn');
+
+            if (menuBtn && !menuBtn._wired) {
+                menuBtn._wired = true;
+                menuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (isOpen()) { closeSidebar(); } else { openSidebar(); }
+                });
+            }
+            if (profileBtn && !profileBtn._wired) {
+                profileBtn._wired = true;
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openSidebar();
+                });
+            }
+            if (closeBtn && !closeBtn._wired) {
+                closeBtn._wired = true;
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeSidebar();
+                });
+            }
+        }
+
+        // Close on backdrop click (clicking to the right of the 340px sidebar)
+        function wireBackdrop() {
+            if (window.parent.document._backdropWired) return;
+            window.parent.document._backdropWired = true;
+            window.parent.document.addEventListener('click', function(e) {
+                if (!isOpen()) return;
+                var sidebar = parentBtn('section[data-testid="stSidebar"]');
+                if (!sidebar) return;
+                var rect = sidebar.getBoundingClientRect();
+                if (e.clientX > rect.right + 5) {
+                    closeSidebar();
+                }
+            }, true);
+        }
+
+        // Re-wire on every render (Streamlit re-renders wipe DOM)
+        function tryWire() {
+            wireNavbarBtns();
+            wireBackdrop();
+        }
+
+        // Wait for parent document to be ready, then wire
+        if (window.parent.document.readyState === 'complete') {
+            setTimeout(tryWire, 300);
+        } else {
+            window.parent.document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(tryWire, 300);
+            });
+        }
+
+        // Also re-run every 800ms to catch Streamlit re-renders
+        var _interval = setInterval(function() {
+            wireNavbarBtns();
+        }, 800);
+
+        // Stop polling after 60 seconds to avoid memory leaks
+        setTimeout(function() { clearInterval(_interval); }, 60000);
+    })();
+    </script>
+    """
+    components.html(script, height=0)
 
 # =====================================================
 # APP HEADER
@@ -984,12 +1460,18 @@ def main():
         login_page()
         return
 
+    # Inject drawer interaction scripts (runs in sandboxed iframe, accesses parent DOM)
+    render_drawer_scripts()
+
     nav = render_sidebar()
 
     if nav == "Admin Console" and is_admin():
+        # Still show top navbar for admin panel
+        render_top_navbar()
         show_admin_panel()
         return
 
+    render_top_navbar()
     render_header()
 
     tab_analyzer, tab_builder, tab_chatbot = st.tabs([
