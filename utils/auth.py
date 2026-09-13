@@ -4,35 +4,123 @@ import secrets
 import smtplib
 import socket
 import hashlib
+import jwt
+from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
+# =====================================================
+# BASE DIRECTORY & LOAD .ENV
+# =====================================================
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(dotenv_path=env_path, override=True)
 
 # =====================================================
-# BASE DIRECTORY
+# JWT CONFIGURATION
 # =====================================================
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "prepnexus_super_secret_jwt_key_2026_prod")
+JWT_ALGORITHM = "HS256"
+JWT_ISSUER = "PrepNexus"
 
 
-# =====================================================
-# LOAD .ENV FILE
-# =====================================================
+def create_jwt_token(user_id: int, email: str, name: str = "", role: str = "user", expires_in_hours: int = 24) -> str:
+    """
+    Generate a signed JWT token containing user identity and authorization claims.
+    """
+    now = datetime.now(timezone.utc)
+    payload = {
+        "user_id": user_id,
+        "email": email.strip().lower(),
+        "name": name,
+        "role": role,
+        "iss": JWT_ISSUER,
+        "iat": now,
+        "exp": now + timedelta(hours=expires_in_hours)
+    }
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
-env_path = os.path.join(
-    BASE_DIR,
-    ".env"
-)
 
-load_dotenv(
-    dotenv_path=env_path,
-    override=True
-)
+def decode_jwt_token(token: str) -> dict:
+    """
+    Decode and validate a JWT token string.
+    Returns payload dictionary if valid, or None if expired/invalid.
+    """
+    if not token or not isinstance(token, str):
+        return None
+    try:
+        payload = jwt.decode(
+            token,
+            JWT_SECRET_KEY,
+            algorithms=[JWT_ALGORITHM],
+            options={"verify_iss": True},
+            issuer=JWT_ISSUER
+        )
+        return payload
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, Exception) as exc:
+        print(f"JWT decode error: {exc}")
+        return None
 
+
+def verify_jwt_session(token: str) -> dict:
+    """
+    Validates JWT token payload and checks user status against database.
+    Returns user dict if session is valid and active, else None.
+    """
+    payload = decode_jwt_token(token)
+    if not payload or "user_id" not in payload:
+        return None
+
+    from database.crud import get_user_by_id
+    user = get_user_by_id(payload["user_id"])
+    if not user or not user.is_active:
+        return None
+
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "name": user.name or "",
+        "role": user.role,
+        "exp": payload.get("exp"),
+        "token": token
+    }
+
+
+def get_jwt_token_claims(token: str) -> dict:
+    """
+    Extract readable claims and human-friendly expiration from a JWT token.
+    """
+    payload = decode_jwt_token(token)
+    if not payload:
+        return {}
+    
+    exp_timestamp = payload.get("exp")
+    expires_str = "Unknown"
+    time_remaining_str = ""
+    if exp_timestamp:
+        try:
+            exp_dt = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+            expires_str = exp_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+            now_dt = datetime.now(timezone.utc)
+            delta = exp_dt - now_dt
+            if delta.total_seconds() > 0:
+                hours = int(delta.total_seconds() // 3600)
+                minutes = int((delta.total_seconds() % 3600) // 60)
+                time_remaining_str = f"{hours}h {minutes}m remaining"
+            else:
+                time_remaining_str = "Expired"
+        except Exception:
+            pass
+
+    return {
+        "user_id": payload.get("user_id"),
+        "email": payload.get("email"),
+        "name": payload.get("name"),
+        "role": payload.get("role"),
+        "issuer": payload.get("iss"),
+        "expires_at": expires_str,
+        "time_remaining": time_remaining_str
+    }
 
 # =====================================================
 # FETCH EMAIL CREDENTIALS

@@ -178,18 +178,18 @@ def Delete_user(user_id):
     try:
         user=session.query(User).filter_by(id=user_id).first()
 
-
         if not user:
             return False 
         
         session.delete(user)
-
         session.commit()
-
         return True 
     
     finally:
         session.close()
+
+# Alias for standard python naming
+delete_user = Delete_user
 
 
 def get_user_by_id(user_id):

@@ -1,5 +1,6 @@
 import streamlit as st
 import string
+import re
 
 
 # =====================================================
@@ -67,7 +68,12 @@ SKILL_ALIASES = {
     "ci/cd": "ci cd",
     "ci cd": "ci cd",
 
-    "c++": "c",
+    "c++": "c++",
+    "cpp": "c++",
+    "c#": "c#",
+    "csharp": "c#",
+    ".net": "dotnet",
+    "dotnet": "dotnet",
 
     # Cloud
     "aws": "amazon web services",
@@ -85,12 +91,17 @@ def normalize_text(text):
     """
     Normalize full resume/job text for better matching:
     - Lowercase
+    - Preserve special language tokens (c++, c#, .net)
     - Replace hyphens/underscores with spaces
     - Standardize aliases
-    - Remove punctuation
+    - Clean remaining punctuation
     """
-
     text = text.lower()
+
+    # Protect key programming language symbols
+    text = re.sub(r"\bc\+\+\b", " cpp_token ", text)
+    text = re.sub(r"\bc#\b", " csharp_token ", text)
+    text = re.sub(r"\b\.net\b", " dotnet_token ", text)
 
     # Replace separators
     text = text.replace("-", " ").replace("_", " ").replace("/", " ")
@@ -108,12 +119,15 @@ def normalize_text(text):
     for old, new in replacements.items():
         text = text.replace(old, new)
 
-    # Remove punctuation
-    text = text.translate(
-        str.maketrans('', '', string.punctuation)
-    )
+    # Remove punctuation except alphanumeric and space
+    text = re.sub(r"[^\w\s]", " ", text)
 
-    return text
+    # Restore preserved tokens
+    text = text.replace("cpp_token", "c++")
+    text = text.replace("csharp_token", "c#")
+    text = text.replace("dotnet_token", "dotnet")
+
+    return " ".join(text.split())
 
 
 # =====================================================
@@ -124,10 +138,16 @@ def normalize_skill(skill):
     Normalize individual skill names
     and map aliases to standardized versions.
     """
+    s = skill.lower().strip()
+    if s in ("c++", "cpp"):
+        return "c++"
+    if s in ("c#", "csharp"):
+        return "c#"
+    if s in (".net", "dotnet"):
+        return "dotnet"
 
     normalized = (
-        skill.lower()
-        .replace("-", " ")
+        s.replace("-", " ")
         .replace("_", " ")
         .replace(".", " ")
         .replace("/", " ")

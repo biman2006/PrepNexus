@@ -26,3 +26,5 @@ protobuf>=4.20.0
 setuptools>=65.0.0
 wheel>=0.40.0
 tavily-python>=0.2.0
+PyJWT>=2.8.0
+pydantic>=2.0.0

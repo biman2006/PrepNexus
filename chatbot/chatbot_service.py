@@ -154,49 +154,74 @@ class PromptBuilder:
 
 
 
+from utils.structured_output import call_gemini_structured, ChatbotStructuredResponse
+
+
 class PrepNexusChatbot:
 
-    def __init__(self,model):
-       # from chatbot.prompt_builder import PromptBuilder
-        #from chatbot.memory_manager import MemoryManager
-        #from chatbot.rag_engine import RAGEngine
+    def __init__(self, model):
+        self.model = model
+        self.prompt_builder = PromptBuilder()
+        self.memory_manager = MemoryManager()
+        self.rag_engine = RAGEngine()
 
-        self.model=model
-
-        self.prompt_builder=(PromptBuilder())
-
-        self.memory_manager=(MemoryManager())
-
-        self.rag_engine=(RAGEngine())
-
-    def add_document(self,text):
-
+    def add_document(self, text):
         self.rag_engine.add_document(text)
 
-
-    def get_response(self,user_message):
-
+    def get_response(self, user_message):
         try:
+            memory_context = self.memory_manager.get_memory_context()
+            rag_context = self.rag_engine.retrieve_context(user_message)
+            final_prompt = self.prompt_builder.build_chat_prompt(user_message, memory_context, rag_context)
 
-            memory_context=(
-                self.memory_manager.get_memory_context()
-            )
+            if self.model is None:
+                return f"🤖 **PrepNexus AI**: Thanks for your question about *{user_message}*! Configure your GEMINI_API_KEY to unlock full personalized career guidance."
 
-            rag_context=(
-                self.rag_engine.retrieve_context(user_message)
-            )
+            # Structured Output generation
+            structured_prompt = f"""
+            {final_prompt}
 
+            Return JSON matching this schema:
+            {{
+              "summary": "Direct concise answer...",
+              "key_takeaways": ["Takeaway 1", "Takeaway 2"],
+              "action_plan": ["Action 1", "Action 2"],
+              "recommended_resources": ["Resource or tool 1"],
+              "followup_questions": ["Question 1"]
+            }}
+            """
 
-            final_prompt=(self.prompt_builder.build_chat_prompt(user_message,memory_context,rag_context))
+            structured = call_gemini_structured(self.model, structured_prompt, schema_class=ChatbotStructuredResponse)
 
+            if structured and isinstance(structured, dict) and structured.get("summary"):
+                lines = []
+                lines.append(f"### 🎯 Summary\n{structured['summary']}")
 
-            response=self.model.generate_content(final_prompt)
+                if structured.get("key_takeaways"):
+                    lines.append("\n### 💡 Key Takeaways")
+                    for pt in structured["key_takeaways"]:
+                        lines.append(f"- {pt}")
 
-            bot_response=response.text
+                if structured.get("action_plan"):
+                    lines.append("\n### 🚀 Action Plan")
+                    for idx, step in enumerate(structured["action_plan"], 1):
+                        lines.append(f"{idx}. {step}")
 
-            self.memory_manager.add_message("assistant",bot_response)
+                if structured.get("recommended_resources"):
+                    lines.append("\n### 📚 Recommended Resources")
+                    for res in structured["recommended_resources"]:
+                        lines.append(f"- {res}")
 
+                if structured.get("followup_questions"):
+                    lines.append("\n---\n*Suggested next question:* " + structured["followup_questions"][0])
+
+                bot_response = "\n".join(lines)
+            else:
+                response = self.model.generate_content(final_prompt)
+                bot_response = getattr(response, "text", "I'm sorry, I couldn't process your request.")
+
+            self.memory_manager.add_message("assistant", bot_response)
             return bot_response
-        
+
         except Exception as e:
-            return f"Error: {str(e)}"
+            return f"❌ Error generating response: {str(e)}"
